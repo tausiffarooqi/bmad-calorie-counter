@@ -7,7 +7,7 @@ paradigm: 'layered, with one hexagonal port (EstimationProvider)'
 scope: 'All features/FRs in prd-bmad-calorie-counter-2026-09-15 (Calorie Tracker MVP)'
 status: final
 created: '2026-09-16'
-updated: '2026-09-19'
+updated: '2026-09-19' # TypeScript downgraded 7.0.2 -> 6.0.3 during Story 0.1
 binds: [FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23]
 sources:
   - '_bmad-output/planning-artifacts/prds/prd-bmad-calorie-counter-2026-09-15/prd.md'
@@ -104,14 +104,14 @@ Everything outside `lib/estimation/` is plain layered — no port/adapter ceremo
 | --- | --- |
 | Next.js (App Router) | 16.3.5 |
 | Node.js | 24 (Active LTS) |
-| TypeScript | 7.0.2 |
+| TypeScript | 6.0.3 (downgraded from 7.0.2 — see gotcha below) |
 | Tailwind CSS | 4.3.3 |
 | Drizzle ORM | 0.45.2 |
 | Supabase (self-hosted: Postgres + GoTrue Auth) | must match the version already running on the Hostinger VPS — confirm before scaffolding local dev via CLI (see Deferred) |
 | Google Gemini API | `gemini-3.8-flash`, `thinking_level: "low"` (see AD-2) |
 | Vercel | hosting platform (app only) |
 
-> **Setup gotcha (TypeScript 7 + Next.js 16):** TypeScript 7.0.2's npm package ships only the Go-native compiler (no `lib/typescript.js` JS Compiler API). Plain `next build` fails to detect TypeScript unless `next.config` sets `experimental.useTypeScriptCli: true`. Not an architectural fork — a required scaffold-time flag.
+> **Setup gotcha (TypeScript 7, superseded 2026-09-19):** TypeScript 7.0.2's npm package ships only the Go-native compiler (no `lib/typescript.js` JS Compiler API) — plain `next build` needed `experimental.useTypeScriptCli: true` to detect it. Moot for now: discovered during Story 0.1 implementation that `typescript-eslint` doesn't yet support TS7 (upstream fix pending), so the project was downgraded to TypeScript 6.0.3 and the `useTypeScriptCli` flag removed. Revisit both once typescript-eslint ships TS7 support.
 
 ## Structural Seed
 
@@ -188,6 +188,7 @@ lib/
 
 ## Deferred
 
+- **Upgrade back to TypeScript 7** — downgraded to 6.0.3 during Story 0.1 implementation because `typescript-eslint` doesn't support TS7 yet. Revisit once typescript-eslint ships TS 7.1+ support (also re-add `experimental.useTypeScriptCli: true` at that point).
 - **Mobile tab-backgrounding during a pending estimate** — AD-9's synchronous call can be interrupted if the browser tab backgrounds mid-request on mobile. Considered (and rejected for now) `waitUntil`-based fire-and-forget and a real background job queue — neither is warranted for a single-user prototype; fallback is a manual "retry the log" if this is ever hit in practice.
 - **Dev/prod Supabase version parity** — the self-hosted Supabase version on the Hostinger VPS was never checked against the local Supabase-CLI version. AD-3 assumes compatible GoTrue/Postgres behavior across environments; confirm both run matching versions before relying on that parity.
 - ~~**GoTrue email-confirmation requirement (FR-20)**~~ — **Resolved in UX** (`ux-bmad-calorie-counter-2026-09-18/EXPERIENCE.md`): email confirmation is disabled on the self-hosted Supabase instance for this prototype; Register logs the user straight in, no "check your email" state exists in the design.

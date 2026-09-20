@@ -56,7 +56,7 @@ NFR-9: Formal compliance/security hardening beyond FR-20/FR-21 is explicitly out
 
 ### Additional Requirements
 
-- **Stack (Epic 1 Story 1 scaffold)**: Next.js 16.3.5 (App Router) on Node.js 24, TypeScript 7.0.2 (requires `experimental.useTypeScriptCli: true` in `next.config` — TS7 ships without the JS Compiler API, plain `next build` fails without this flag), Tailwind CSS 4.3.3, Drizzle ORM 0.45.2. No named third-party starter template — this exact combination is the scaffold.
+- **Stack (Epic 0 Story 0.1 scaffold)**: Next.js 16.3.5 (App Router) on Node.js 24, TypeScript 6.0.3 (downgraded from Architecture's original 7.0.2 pin during Story 0.1 — `typescript-eslint` doesn't support TS7 yet; revisit once it does), Tailwind CSS 4.3.3, Drizzle ORM 0.45.2. No named third-party starter template — this exact combination is the scaffold.
 - **Data + Auth backend**: self-hosted Supabase (Postgres + GoTrue Auth) exclusively — no other auth library introduced (AD-3). Local dev via Supabase CLI (`supabase init` + `supabase start`, Docker-managed: Postgres, Auth, Storage, Realtime, Studio). Production points at the existing self-hosted Supabase instance on the user's Hostinger VPS. Confirm the Hostinger VPS Supabase version matches what the local CLI provisions before relying on identical GoTrue/Postgres behavior across environments (open item).
 - **Deployment**: Next.js app hosted on Vercel. Environment-specific values (Postgres connection string, Supabase URL/keys, Gemini API key) injected via env vars — no other divergence between dev and prod.
 - **EstimationProvider port** (AD-2): a single interface — `estimate(input: Photo | Text): { ok: true, description: string, calories: number } | { ok: false, reason: 'insufficient_detail' }`. `GeminiAdapter` (model `gemini-3.8-flash`, `thinking_level: "low"`) is the only bound implementation for MVP. Classification (FR-7) is never inside the adapter — always a downstream call to `entry-classifier` on the `ok: true` output.
@@ -179,6 +179,9 @@ So that the experience feels considered rather than generic or mismatched.
 
 **Acceptance Criteria:**
 
+**Given** no project exists yet
+**Then** this story includes the project scaffold — Next.js 16.3.5 (App Router) on Node.js 24, TypeScript 6.0.3 (downgraded from 7.0.2 during implementation — see Architecture Deferred list), Tailwind CSS 4.3.3 — plus shadcn/ui initialized as the component foundation (moved here from Story 1.1, since tokens can't be configured onto a project that doesn't exist yet; Story 1.1 keeps the Supabase connection, Drizzle setup, and `profiles` table, which build on top of this)
+
 **Given** the shadcn/ui + Tailwind foundation from Architecture
 **When** the Muted Earth Editorial color tokens are applied (background `#EFEAE3`, foreground `#3A342C`, card `#F7F4EE`, card-foreground `#3A342C`, muted-foreground `#8C8272`, border `#D9D1C2`, input `#D9D1C2`, ring `#A85C42`, primary `#A85C42`, primary-foreground `#FBF3EC`, accent `#7C8B6F`, accent-foreground `#F7F4EE`)
 **Then** every screen built in later epics inherits these tokens automatically rather than hardcoding its own colors (UX-DR1)
@@ -248,7 +251,7 @@ So that the app can track my calorie budget against my own target from day one.
 **Given** I successfully register
 **Then** the screen includes a link to the Login screen, and follows UX-DR5/UX-DR6 (buttons), UX-DR22/UX-DR24 (tap targets, visible labels)
 
-**And** this story includes the project scaffold — Next.js 16.3.5 (App Router) on Node.js 24, TypeScript 7.0.2 (`experimental.useTypeScriptCli: true`), Tailwind CSS 4.3.3, Drizzle ORM 0.45.2 — plus the self-hosted Supabase connection (local dev via Supabase CLI) and the `profiles` table (user_id PK/FK to `auth.users`, daily_calorie_target, dietary_preference defaulting to `'non_vegetarian'` until changed in Story 1.3)
+**And** this story adds Drizzle ORM 0.45.2 and the self-hosted Supabase connection (local dev via Supabase CLI) on top of Story 0.1's project scaffold, plus the `profiles` table (user_id PK/FK to `auth.users`, daily_calorie_target, dietary_preference defaulting to `'non_vegetarian'` until changed in Story 1.3)
 
 ### Story 1.2: User Login
 
