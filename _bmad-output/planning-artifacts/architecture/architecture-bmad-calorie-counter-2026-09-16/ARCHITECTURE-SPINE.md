@@ -159,7 +159,7 @@ erDiagram
     }
 ```
 
-`auth.users` is owned by Supabase Auth (GoTrue); `profiles` is the app-owned extension table keyed 1:1 to it.
+`auth.users` is owned by Supabase Auth (GoTrue); `profiles` is the app-owned extension table keyed 1:1 to it. `profiles.dietary_preference` defaults to `'non_vegetarian'` at row creation — AD-8's Recommendation lookup is keyed partly on this field, so it must always have a defined value, never null, even before the user visits Preferences.
 
 **Source tree**
 

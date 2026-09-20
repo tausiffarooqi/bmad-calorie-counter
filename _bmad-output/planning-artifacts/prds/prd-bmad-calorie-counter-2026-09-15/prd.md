@@ -2,7 +2,7 @@
 title: Calorie Tracker MVP
 status: final
 created: 2026-09-15
-updated: 2026-09-17
+updated: 2026-09-19
 ---
 
 # PRD: Calorie Tracker MVP
@@ -167,6 +167,9 @@ First login includes a message reflecting the previous Day's performance: congra
 #### FR-19: Dietary preference setting
 User can set a Dietary Preference (vegetarian or non-vegetarian) on the account page; this drives the content of all Recommendations.
 
+**Consequences (testable):**
+- `[ASSUMPTION: until the user explicitly sets a Dietary Preference, it defaults to non-vegetarian, so Recommendation content always has a defined value to look up — not left undefined for a new user who hasn't visited the account page yet.]`
+
 **Out of Scope:**
 - Finer-grained preferences (macros, cuisine, allergies, etc.) — deferred, see §5.
 
@@ -257,3 +260,4 @@ The dashboard also shows simple aggregate stats over the 3-month window: the num
 - §4.1 FR-2 — Estimates are shown as a single number, not a confidence range, for MVP.
 - §4.3 FR-13 — Account-creation screen suggests a standard adult daily intake value as a pre-filled starting point for the Daily Calorie Target, which the user can accept or change.
 - §4.3 FR-14 — Timezone is auto-detected from the browser/device; no manual override in MVP.
+- §4.5 FR-19 — Dietary Preference defaults to non-vegetarian until the user explicitly changes it.

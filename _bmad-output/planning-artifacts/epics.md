@@ -248,7 +248,7 @@ So that the app can track my calorie budget against my own target from day one.
 **Given** I successfully register
 **Then** the screen includes a link to the Login screen, and follows UX-DR5/UX-DR6 (buttons), UX-DR22/UX-DR24 (tap targets, visible labels)
 
-**And** this story includes the project scaffold — Next.js 16.3.5 (App Router) on Node.js 24, TypeScript 7.0.2 (`experimental.useTypeScriptCli: true`), Tailwind CSS 4.3.3, Drizzle ORM 0.45.2 — plus the self-hosted Supabase connection (local dev via Supabase CLI) and the `profiles` table (user_id PK/FK to `auth.users`, daily_calorie_target, dietary_preference nullable until Story 1.3)
+**And** this story includes the project scaffold — Next.js 16.3.5 (App Router) on Node.js 24, TypeScript 7.0.2 (`experimental.useTypeScriptCli: true`), Tailwind CSS 4.3.3, Drizzle ORM 0.45.2 — plus the self-hosted Supabase connection (local dev via Supabase CLI) and the `profiles` table (user_id PK/FK to `auth.users`, daily_calorie_target, dietary_preference defaulting to `'non_vegetarian'` until changed in Story 1.3)
 
 ### Story 1.2: User Login
 
@@ -296,9 +296,9 @@ So that my budget and recommendations stay accurate as my needs change.
 **When** I try to save
 **Then** I see an inline field-level validation error and the value is not saved
 
-**Given** I have not yet set a Dietary Preference
+**Given** I have never explicitly changed my Dietary Preference
 **When** I visit this screen
-**Then** I can pick vegetarian or non-vegetarian, which will drive Recommendation content once Epic 3 exists (FR-19)
+**Then** it shows non-vegetarian as the current value (the default set at registration, Story 1.1), which I can change to vegetarian — this default is what Epic 3's Recommendation lookup uses until I do (FR-19)
 
 **Given** I change my Dietary Preference
 **When** I save
@@ -509,6 +509,9 @@ So that I know what to eat next without having to think about it myself.
 **When** the `recommendationEngine` looks it up
 **Then** it selects from the static, versioned lookup table keyed by (time-of-day slot, Dietary Preference, Over/Under-Target state) — no external API call (AD-8) — and the same key returns the identical suggestion on a different day, which is expected, not a bug
 
+**Given** a user has never explicitly set a Dietary Preference
+**Then** the lookup key still resolves — `profiles.dietary_preference` defaults to `non_vegetarian` at account creation (Story 1.1), so this lookup never hits an undefined case
+
 **Given** I submit an Entry
 **When** the response returns
 **Then** it includes the estimated calories, my updated Remaining Calorie Budget, and one Recommendation per remaining Meal Slot, all in the same response (FR-9) — completing the contract Epic 2 began
@@ -650,3 +653,53 @@ So that I get guidance for a meal slot that would otherwise never get its own re
 **Given** I am in the Over-Target State
 **When** the First-login prompt would otherwise show a breakfast offer
 **Then** no breakfast offer appears — Over-Target precedence (Story 3.5) suppresses it exactly like every other recommendation path (FR-12 over FR-17)
+
+## Epic 5: Historical Trends
+
+Users can view a 3-month history of their calorie tracking with simple aggregate stats. Could-have; stands alone as a reporting layer computed directly from Epic 1's Daily Calorie Target and Epic 2's stored Entries — it doesn't need Epic 3's live budget/recommendation engine, which persists nothing for Epic 5 to read.
+
+### Story 5.1: 3-Month Trend View
+
+As a user,
+I want to see a day-by-day view of my calorie tracking over the last 3 months,
+So that I can spot patterns beyond today's snapshot.
+
+**Acceptance Criteria:**
+
+**Given** I navigate to Historical Trends
+**When** the screen loads
+**Then** I see, for each day in the last 3 months, total calories consumed against that day's Daily Calorie Target (FR-22)
+
+**Given** a day in the window has at least one logged Entry
+**When** the view renders
+**Then** that day shows real data — Day boundary per AD-5, not calendar-date math
+
+**Given** a day in the window has zero logged Entries
+**When** the view renders
+**Then** that day is omitted from the view — never shown as a zero-calorie day (FR-22 consequence)
+
+**Given** I have never logged any Entry at all
+**When** I open Historical Trends
+**Then** I see a calm "Nothing logged yet — check back once you've tracked a few days" message in place of an empty chart (UX-DR20)
+
+### Story 5.2: Trend Summary Stats
+
+As a user,
+I want simple aggregate stats alongside my 3-month history,
+So that I get the headline without reading every day individually.
+
+**Acceptance Criteria:**
+
+**Given** Story 5.1's 3-month view has at least one day of data
+**When** Historical Trends loads
+**Then** I also see: the number/percentage of days within target vs. over target, and my average daily calories consumed across the window (FR-23)
+
+**Given** a day was omitted from the view (no Entries logged)
+**When** stats are computed
+**Then** that day is excluded from both the within/over-target count and the average — not counted as a zero-calorie day (consistent with FR-22's no-fabrication rule)
+
+**Given** I have never logged any Entry at all
+**When** I open Historical Trends
+**Then** no aggregate stats are shown — just the "nothing logged yet" state from Story 5.1
+
+**And** this story is explicitly Could-have scope: no export, no goal-setting-over-time, no correlation analytics against other data (PRD §4.7 Out of Scope)
