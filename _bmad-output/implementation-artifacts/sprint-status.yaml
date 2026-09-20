@@ -29,14 +29,14 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: 09-19-2026 12:00
+last_updated: 09-19-2026 23:45
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
 development_status:
   epic-0: in-progress
-  0-1-design-tokens-visual-foundation: in-progress
+  0-1-design-tokens-visual-foundation: review
   0-2-cross-cutting-interaction-accessibility-primitives: backlog
   epic-0-retrospective: optional
 

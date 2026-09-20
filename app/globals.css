@@ -10,6 +10,20 @@
   --font-sans: var(--font-sans);
   --font-recommendation: var(--font-recommendation);
   --font-heading: var(--font-sans);
+  /* Typography roles (DESIGN.md) — compound tokens so a screen gets the
+     full size/weight/line-height/tracking in one utility class instead of
+     re-deriving it from arbitrary values. Body already matches Tailwind's
+     default text-sm (14px/1.5), so no separate token is needed there. */
+  --text-label: 12px;
+  --text-label--line-height: 1;
+  --text-label--font-weight: 600;
+  --text-label--letter-spacing: 0.06em;
+  --text-display-number: 52px;
+  --text-display-number--line-height: 1;
+  --text-display-number--font-weight: 700;
+  --text-recommendation: 17px;
+  --text-recommendation--line-height: 1.35;
+  --text-recommendation--font-weight: 400;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

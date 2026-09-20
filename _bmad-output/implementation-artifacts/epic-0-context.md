@@ -13,7 +13,7 @@ Establish the global, feature-independent visual and interaction contracts — d
 
 ## Requirements & Constraints
 
-- Story 0.1 includes the project scaffold: Next.js 16.3.5 (App Router) on Node.js 24, TypeScript 7.0.2 (requires `experimental.useTypeScriptCli: true` in `next.config` — TS7 ships without the JS Compiler API, plain `next build` fails without this flag), Tailwind CSS 4.3.3, and shadcn/ui initialized as the component foundation. No project exists yet, and this must exist before any token can be configured. (Originally mis-assigned to Epic 1 Story 1.1 in planning; corrected here since Epic 0 builds first.)
+- Story 0.1 includes the project scaffold: Next.js 16.3.5 (App Router) on Node.js 24, TypeScript 6.0.3 (downgraded from Architecture's original 7.0.2 pin during Story 0.1 implementation — `typescript-eslint` doesn't support TS7 yet), Tailwind CSS 4.3.3, and shadcn/ui initialized as the component foundation. No project exists yet, and this must exist before any token can be configured. (Originally mis-assigned to Epic 1 Story 1.1 in planning; corrected here since Epic 0 builds first.)
 - Color, typography, and radius tokens must be applied globally (as shadcn theme overrides) so later screens inherit them automatically instead of hardcoding their own values.
 - Both required web fonts must be loaded and wired to their token roles before any screen consumes them.
 - Depth/separation must never rely on drop shadows anywhere in the UI — shadcn's default shadow-on-hover must be explicitly overridden to render nothing.

@@ -7,7 +7,7 @@ paradigm: 'layered, with one hexagonal port (EstimationProvider)'
 scope: 'All features/FRs in prd-bmad-calorie-counter-2026-09-15 (Calorie Tracker MVP)'
 status: final
 created: '2026-09-16'
-updated: '2026-09-19' # TypeScript downgraded 7.0.2 -> 6.0.3 during Story 0.1
+updated: '2026-09-19'
 binds: [FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23]
 sources:
   - '_bmad-output/planning-artifacts/prds/prd-bmad-calorie-counter-2026-09-15/prd.md'
