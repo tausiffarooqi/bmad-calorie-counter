@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 
-// Temporary foundation showcase for Story 0.1 (Design Tokens & Visual
-// Foundation). Exercises the Muted Earth Editorial tokens end to end so the
-// theme can be visually verified before any real screen is built. Replaced
-// by the actual Daily view in Epic 3.
+// Temporary foundation showcase for Epic 0 (UX Foundation). Exercises the
+// Muted Earth Editorial tokens (Story 0.1) and the global focus-visible
+// ring (Story 0.2) so both can be visually verified before any real screen
+// is built. Replaced by the actual Daily view in Epic 3.
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
@@ -21,6 +21,11 @@ export default function Home() {
         <Button>Add Photo</Button>
         <Button variant="outline">Add Text</Button>
       </div>
+      {/* Plain, non-shadcn interactive element — proves the global
+          :focus-visible rule (Story 0.2) applies beyond Button. */}
+      <a href="#" className="text-sm text-primary underline-offset-4 hover:underline">
+        Log in
+      </a>
     </div>
   );
 }

@@ -4,72 +4,41 @@
 
 ## Goal
 
-Establish the global, feature-independent visual and interaction contracts — design tokens, typography, radius scale, elevation rule, and cross-cutting interaction/accessibility primitives — that every later screen inherits. This epic is built first, before any user-facing epic, so that Epic 1 onward can rely on a shared foundation rather than each screen defining its own colors, fonts, or interaction rules from scratch. It is not tied to any functional requirement; it exists purely to keep the product visually and behaviorally consistent end to end.
+This epic establishes the global, feature-independent visual and interaction contracts — design tokens, typography, spacing/radius rules, and cross-cutting accessibility/interaction primitives — that every later screen inherits. It exists so Epic 1 onward can rely on a shared foundation instead of each screen defining its own colors, fonts, or interaction rules from scratch. It is not tied to any functional requirement; it satisfies UX design requirements only (UX-DR1–4, UX-DR25, UX-DR27, UX-DR28).
 
 ## Stories
 
-- Story 0.1: Design Tokens & Visual Foundation
-- Story 0.2: Cross-Cutting Interaction & Accessibility Primitives
+- Story 0.1: Design Tokens & Visual Foundation (done — project scaffold, color/typography/radius tokens, no-drop-shadow rule)
+- Story 0.2: Cross-Cutting Interaction & Accessibility Primitives (in progress — global focus-visible ring landed; one-primary/one-secondary action rule, no infinite scroll, no multi-step logging wizard remain conventions for later epics to follow)
 
 ## Requirements & Constraints
 
-- Story 0.1 includes the project scaffold: Next.js 16.3.5 (App Router) on Node.js 24, TypeScript 6.0.3 (downgraded from Architecture's original 7.0.2 pin during Story 0.1 implementation — `typescript-eslint` doesn't support TS7 yet), Tailwind CSS 4.3.3, and shadcn/ui initialized as the component foundation. No project exists yet, and this must exist before any token can be configured. (Originally mis-assigned to Epic 1 Story 1.1 in planning; corrected here since Epic 0 builds first.)
-- Color, typography, and radius tokens must be applied globally (as shadcn theme overrides) so later screens inherit them automatically instead of hardcoding their own values.
-- Both required web fonts must be loaded and wired to their token roles before any screen consumes them.
-- Depth/separation must never rely on drop shadows anywhere in the UI — shadcn's default shadow-on-hover must be explicitly overridden to render nothing.
-- Every screen may have at most one primary action and one secondary action — never more than two competing actions on a single surface.
-- No interaction anywhere may depend on a hover-only affordance (tap-first, mobile/desktop-web product).
-- Every focusable element (buttons, inputs, links) must show a visible focus ring at visible contrast against the background on keyboard focus.
-- List-based screens with bounded datasets (a single Day's entries, a 3-month trend window) must load their full set at once — no infinite scroll or pagination.
-- The Log Entry flow must always be one screen, one action — never a multi-step wizard.
-- No formal WCAG level is targeted for this single-user prototype, but a reasonable accessibility baseline applies (comfortable tap targets, labeled icon-only controls, visible form labels, visible focus states).
+- Every screen must inherit shared color, typography, and radius tokens rather than hardcoding its own styling.
+- Depth/separation must be expressed only through border hairlines, dashed rules, and background/card value shifts — no drop shadows anywhere, including on hover (shadcn's default shadow-on-hover must be explicitly suppressed).
+- Any surface with interactive controls may have at most one primary action and one secondary action — never more than two competing actions on a single surface.
+- No interaction anywhere may depend on a hover-only affordance to be discoverable or usable (tap-first model for mobile/desktop-web).
+- Every focusable element (buttons, inputs, links) must show a visible focus ring at visible contrast against the background when it receives keyboard focus.
+- Bounded-dataset list screens (Entries list, Historical Trends) must load their full set at once — no infinite scroll or pagination.
+- Logging an Entry must always be one screen, one action — never a multi-step wizard.
+- No formal WCAG level is targeted (single-user prototype), but a reasonable accessibility baseline applies: comfortable tap targets, labeled icon-only controls, visible form labels, visible focus states, screen-reader-readable in-progress state.
 
 ## Technical Decisions
 
-**Color tokens (Muted Earth Editorial — shadcn theme overrides):**
-- background `#EFEAE3`
-- foreground `#3A342C`
-- card `#F7F4EE`
-- card-foreground `#3A342C`
-- muted-foreground `#8C8272`
-- border `#D9D1C2`
-- input `#D9D1C2`
-- ring `#A85C42`
-- primary `#A85C42` (clay — the one color meaning "needs attention/action"; also used for the Over-Target report, deliberately not red)
-- primary-foreground `#FBF3EC`
-- accent `#7C8B6F` (sage — reserved exclusively for "a Recommendation is present"; never used for chrome/navigation)
-- accent-foreground `#F7F4EE`
-- All other shadcn tokens (popover, secondary, destructive) stay at shadcn defaults; `destructive` is deliberately never used anywhere in the product.
-
-**Contrast notes (informational, no formal WCAG gate):** foreground-on-background is 10.28:1. primary-on-card is 4.48:1 — fine for large/bold text (budget number, buttons) but do not use raw primary for small critical text on card. muted-foreground-on-card is 3.45:1 — keep to secondary/decorative labels only (timestamps, eyebrows), never text a user must read to understand their state.
-
-**Typography tokens** (load both web fonts, wire to roles):
-- body: Inter, 14px/400, line-height 1.5
-- label: Inter, 12px/600, letter-spacing 0.06em (uppercase tracking)
-- display-number: Inter, 52px/700, line-height 1 (used for the Remaining Calorie Budget number — stays sans-serif/bold for legibility, not a design flourish)
-- recommendation: Lora, 17px/400, italic, line-height 1.35 — the single serif moment in the product; must not spread to headings, buttons, or any other copy
-
-**Radius scale:**
-- sm 8px — buttons, inputs
-- md 10px — entries list, general cards (prompt card, retry prompt, in-progress indicator, over-target banner)
-- lg 12px — Recommendation card only (its larger radius is the one place shape itself signals "featured element")
-- full 9999px — reserved for future status pills, not yet used
-
-**Elevation:** no drop shadows anywhere; depth comes only from border hairlines, dashed rules, and the background/card value shift. This overrides shadcn's default shadow-on-hover.
-
-**Spacing:** inherits shadcn/Tailwind's default 4-based scale as-is — no product-specific overrides.
+- Stack (established in Story 0.1): Next.js 16.3.5 (App Router) on Node.js 24, Tailwind CSS 4.3.3, shadcn/ui initialized as the component foundation. TypeScript is pinned at **6.0.3**, downgraded from the architecture's original 7.0.2 during Story 0.1 implementation because `typescript-eslint` does not yet support TS7 — there is no `useTypeScriptCli` flag in this build; that flag and the TS7 upgrade are deferred until `typescript-eslint` adds support.
+- Design tokens are implemented as shadcn theme overrides, not a from-scratch design system — shadcn's structural defaults (spacing scale, component anatomy, focus/hover mechanics) are inherited wholesale; only color, the two typefaces, and radius are overridden.
+- Color tokens (Muted Earth Editorial): background `#EFEAE3`, foreground `#3A342C`, card `#F7F4EE`, card-foreground `#3A342C`, muted-foreground `#8C8272`, border `#D9D1C2`, input `#D9D1C2`, ring `#A85C42`, primary `#A85C42`, primary-foreground `#FBF3EC`, accent `#7C8B6F`, accent-foreground `#F7F4EE`. All other shadcn tokens (popover, secondary, destructive) stay at shadcn defaults — `destructive` is deliberately never invoked anywhere in the product.
+- Typography tokens: Inter for body (14px/400), label (12px/600, uppercase tracking), and display-number (52px/700); Lora italic reserved exclusively for the `recommendation` role (17px/400/1.35 line-height, italic) — it must never spread to headings, buttons, or other body copy.
+- Radius scale: sm 8px (buttons, inputs), md 10px (entries list, general cards, prompt/retry cards, in-progress indicator, over-target banner), lg 12px (Recommendation card only — its larger radius is the one place shape signals "featured element"), full 9999px (reserved for future status pills, unused for now).
+- Measured contrast (informational only, no pass/fail gate for this prototype): foreground-on-background 10.28:1 (excellent); primary-on-card 4.48:1 (fine for large/bold text like the budget number and buttons, but under the small-text AA threshold — never set small critical text in raw primary-on-card); muted-foreground-on-card 3.45:1; muted-foreground-on-background 3.16:1 — both muted-foreground pairings are noticeably lower than the foreground pairing, so keep that token to secondary/decorative labels (timestamps, eyebrows) only, on either background, never to text a user must read to understand their state.
 
 ## UX & Interaction Patterns
 
-- Tap-first interaction model: no hover-only affordances anywhere (no hover state exists on mobile); every interactive element must be tap-legible on its own.
-- At most one primary (`primary`-colored) action plus one secondary (card/outline) action per screen — never more than two competing actions.
-- Focus states use the `ring` token (clay, `#A85C42`) at visible contrast against the background on every focusable element (buttons, inputs, links).
-- No infinite scroll anywhere — the Entries list (single Day) and Historical Trends (3-month window) are both bounded datasets and load in full.
-- Logging an Entry is always one screen, one action — never a multi-step wizard.
-- Single-column, mobile-first layout; the same column reflows to a centered, comfortably-margined column on desktop rather than introducing a multi-column layout at wider viewports.
-- A dashed border-bottom rule separates a date/eyebrow header from body content — the one recurring structural motif on primary screens.
+- Tap-first interaction model throughout — no hover-only affordances anywhere (there is no reliable hover state on mobile), no required keyboard shortcuts.
+- Focus rings use the clay `ring` token and must be visibly distinguishable against the background on every focusable element.
+- Entries list and Historical Trends are both explicitly bounded datasets (single Day / 3-month window) — load in full, never paginate or infinite-scroll.
+- The Log Entry flow is one screen with one action (photo or text, not both combined) — never a multi-step wizard, regardless of how later epics extend it.
 
 ## Cross-Story Dependencies
 
-- Story 0.2's focus-ring rule depends on the `ring` color token established in Story 0.1.
-- Every later epic (1–5) depends on this epic being complete: they inherit these tokens and interaction rules rather than defining their own, so Epic 0 must land before any user-facing screen work begins.
+- Story 0.2 depends on Story 0.1's token foundation being in place first — specifically the `ring` (clay) token used for visible focus states.
+- Every later epic (1 through 5) depends on both Epic 0 stories being complete before building screens: they inherit tokens (0.1) and interaction/accessibility rules (0.2) rather than each defining their own.

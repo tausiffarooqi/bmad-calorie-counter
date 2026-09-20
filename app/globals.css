@@ -148,4 +148,10 @@
   html {
     @apply font-sans;
   }
+  /* UX-DR25 / Story 0.2: every focusable element gets a visible clay
+     ring on keyboard focus, not just components (like Button) that opt
+     in explicitly with their own focus-visible classes. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
 }
