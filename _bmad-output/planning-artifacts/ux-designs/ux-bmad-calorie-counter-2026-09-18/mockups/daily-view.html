@@ -1,0 +1,264 @@
+<!--
+  Direction: Muted Earth Editorial
+  Rationale: Warm greige canvas with clay and sage accents, depth built from thin
+  borders and dotted rules rather than shadows — a tactile, notebook-like register.
+  Recommendation copy is set in italic serif to read like a hand-written suggestion
+  rather than a system message. Warmer and earthier than the other two, with the most
+  visible texture (borders, rules) while staying just as uncluttered.
+  Hex values:
+    --bg: #EFEAE3 (warm greige)
+    --surface: #F7F4EE
+    --text: #3A342C (warm charcoal)
+    --text-muted: #8C8272 (taupe)
+    --accent-clay: #A85C42 (muted clay/rust)
+    --accent-sage: #7C8B6F (sage green, recommendation/positive)
+    --border: #D9D1C2
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Direction: Muted Earth Editorial</title>
+<style>
+  :root {
+    --bg: #EFEAE3;
+    --surface: #F7F4EE;
+    --text: #3A342C;
+    --text-muted: #8C8272;
+    --accent-clay: #A85C42;
+    --accent-sage: #7C8B6F;
+    --border: #D9D1C2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 24px;
+    background: #E2DACB;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    justify-content: center;
+  }
+  .frame-label {
+    text-align: center;
+    font-size: 13px;
+    color: #6E6656;
+    margin-bottom: 10px;
+    letter-spacing: 0.03em;
+  }
+  .phone {
+    width: 320px;
+    height: 640px;
+    background: var(--bg);
+    border-radius: 28px;
+    border: 8px solid #3A342C;
+    overflow: hidden;
+    position: relative;
+    color: var(--text);
+  }
+  .screen {
+    padding: 28px 22px 22px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 4px;
+  }
+  .date {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .budget-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 4px;
+  }
+  .budget-number {
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0 0 4px;
+    color: var(--accent-clay);
+  }
+  .budget-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0 0 20px;
+  }
+  .entries {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .entry-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .entry-row:last-child { border-bottom: none; }
+  .entry-row span:last-child { color: var(--text-muted); }
+  .log-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    flex: 1;
+    padding: 12px 0;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: default;
+    border: 1px solid var(--border);
+  }
+  .btn-primary {
+    background: var(--accent-clay);
+    color: #FBF3EC;
+    border-color: var(--accent-clay);
+  }
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+  }
+  .rec-card {
+    margin-top: auto;
+    border: 1px solid var(--accent-sage);
+    border-radius: 12px;
+    padding: 16px;
+    background: var(--surface);
+  }
+  .rec-eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-sage);
+    margin: 0 0 6px;
+    font-weight: 700;
+  }
+  .rec-text {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 17px;
+    line-height: 1.35;
+    margin: 0;
+    color: var(--text);
+  }
+  .banner {
+    border: 1px solid var(--accent-clay);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 13px;
+    color: var(--accent-clay);
+    margin-bottom: 18px;
+    line-height: 1.45;
+    background: var(--surface);
+  }
+  .greeting {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  .tone-msg {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 22px;
+    padding-bottom: 20px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .prompt-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .prompt-q { font-size: 13px; margin: 0 0 12px; }
+  .prompt-actions { display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+
+<div>
+  <div class="frame-label">Primary — midday, 1 slot remaining</div>
+  <div class="phone"><div class="screen">
+    <p class="eyebrow">Today</p>
+    <p class="date">Wednesday, 2:14 PM</p>
+    <p class="budget-label">Remaining today</p>
+    <p class="budget-number">1,240</p>
+    <p class="budget-sub">calories &middot; target 2,000</p>
+    <div class="entries">
+      <div class="entry-row"><span>Breakfast &middot; Oatmeal &amp; berries</span><span>320</span></div>
+      <div class="entry-row"><span>Lunch &middot; Paneer tikka bowl</span><span>440</span></div>
+    </div>
+    <div class="log-buttons">
+      <div class="btn btn-primary">Add Photo</div>
+      <div class="btn btn-secondary">Add Text</div>
+    </div>
+    <div class="rec-card">
+      <p class="rec-eyebrow">Dinner Recommendation</p>
+      <p class="rec-text">"Try a grilled paneer wrap with sautéed greens."</p>
+    </div>
+  </div></div>
+</div>
+
+<div>
+  <div class="frame-label">Over-Target State</div>
+  <div class="phone"><div class="screen">
+    <p class="eyebrow">Today</p>
+    <p class="date">Wednesday, 9:02 PM</p>
+    <div class="banner">180 calories over target today. No recommendation for now — tomorrow's a fresh start.</div>
+    <div class="entries">
+      <div class="entry-row"><span>Breakfast &middot; Oatmeal &amp; berries</span><span>320</span></div>
+      <div class="entry-row"><span>Lunch &middot; Paneer tikka bowl</span><span>440</span></div>
+      <div class="entry-row"><span>Dinner &middot; Thali platter</span><span>1,440</span></div>
+    </div>
+    <div class="log-buttons">
+      <div class="btn btn-primary">Add Photo</div>
+      <div class="btn btn-secondary">Add Text</div>
+    </div>
+  </div></div>
+</div>
+
+<div>
+  <div class="frame-label">First login, before 10am</div>
+  <div class="phone"><div class="screen">
+    <p class="greeting">Good morning.</p>
+    <p class="tone-msg">You stayed within your target yesterday — nice, steady work.</p>
+    <div class="prompt-card">
+      <p class="prompt-q">Remaining budget today: <strong>2,000 calories</strong>. Log a meal now?</p>
+      <div class="prompt-actions">
+        <div class="btn btn-primary" style="flex:1;">Log a meal</div>
+        <div class="btn btn-secondary" style="flex:1;">Not now</div>
+      </div>
+    </div>
+    <div class="prompt-card">
+      <p class="prompt-q">Want a breakfast recommendation too?</p>
+      <div class="prompt-actions">
+        <div class="btn btn-secondary" style="flex:1;">Yes, suggest one</div>
+        <div class="btn btn-secondary" style="flex:1;">Skip</div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!--
+  Direction: Cool Minimal Editorial
+  Rationale: Near-white cool gray canvas, hairline dividers instead of cards, and a
+  single restrained indigo accent used sparingly (primary action + the recommendation
+  label only). The budget number is set large and light-weight rather than bold, so
+  scale (not weight or color) creates hierarchy — the most negative-space, "quietest"
+  of the three directions, aimed at feeling composed rather than busy.
+  Hex values:
+    --bg: #F7F8F9 (near-white cool gray)
+    --surface: #FFFFFF
+    --text: #1C2024 (cool near-black)
+    --text-muted: #8B939C (slate gray)
+    --accent: #3B4B96 (muted indigo)
+    --accent-tint: #E7EAF5 (indigo tint, over-target banner)
+    --border: #E3E6EA (hairline)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Direction: Cool Minimal Editorial</title>
+<style>
+  :root {
+    --bg: #F7F8F9;
+    --surface: #FFFFFF;
+    --text: #1C2024;
+    --text-muted: #8B939C;
+    --accent: #3B4B96;
+    --accent-tint: #E7EAF5;
+    --border: #E3E6EA;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 24px;
+    background: #E9EBEE;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    justify-content: center;
+  }
+  .frame-label {
+    text-align: center;
+    font-size: 13px;
+    color: #6E7580;
+    margin-bottom: 10px;
+    letter-spacing: 0.03em;
+  }
+  .phone {
+    width: 320px;
+    height: 640px;
+    background: var(--bg);
+    border-radius: 30px;
+    border: 8px solid #1C2024;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(28,32,36,0.16);
+    color: var(--text);
+  }
+  .screen {
+    padding: 32px 24px 24px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 4px;
+    font-weight: 600;
+  }
+  .date {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 30px;
+  }
+  .budget-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 6px;
+    letter-spacing: 0.02em;
+  }
+  .budget-number {
+    font-size: 64px;
+    font-weight: 200;
+    line-height: 1;
+    margin: 0 0 6px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .budget-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0 0 32px;
+  }
+  .entries {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 28px;
+  }
+  .entry-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .entry-row span:last-child { color: var(--text-muted); font-weight: 300; }
+  .log-buttons {
+    display: flex;
+    gap: 1px;
+    margin-bottom: 28px;
+    background: var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: default;
+    background: var(--surface);
+    color: var(--text);
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #FFFFFF;
+  }
+  .rec-block {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .rec-eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin: 0 0 8px;
+    font-weight: 700;
+  }
+  .rec-text {
+    font-size: 18px;
+    font-weight: 300;
+    line-height: 1.35;
+    margin: 0;
+    color: var(--text);
+  }
+  .banner {
+    background: var(--accent-tint);
+    border-radius: 10px;
+    padding: 18px;
+    font-size: 13px;
+    color: #2E3A75;
+    margin-bottom: 24px;
+    line-height: 1.45;
+    font-weight: 400;
+  }
+  .greeting {
+    font-size: 24px;
+    font-weight: 300;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+  .tone-msg {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    margin: 0 0 30px;
+  }
+  .prompt-card {
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+    margin-bottom: 18px;
+  }
+  .prompt-q { font-size: 13px; margin: 0 0 14px; }
+  .prompt-actions { display: flex; gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; }
+</style>
+</head>
+<body>
+
+<div>
+  <div class="frame-label">Primary — midday, 1 slot remaining</div>
+  <div class="phone"><div class="screen">
+    <p class="eyebrow">Today</p>
+    <p class="date">Wednesday · 2:14 PM</p>
+    <p class="budget-label">Remaining</p>
+    <p class="budget-number">1,240</p>
+    <p class="budget-sub">calories of 2,000 target</p>
+    <div class="entries">
+      <div class="entry-row"><span>Breakfast — Oatmeal &amp; berries</span><span>320</span></div>
+      <div class="entry-row"><span>Lunch — Paneer tikka bowl</span><span>440</span></div>
+    </div>
+    <div class="log-buttons">
+      <div class="btn btn-primary">Add Photo</div>
+      <div class="btn">Add Text</div>
+    </div>
+    <div class="rec-block">
+      <p class="rec-eyebrow">Dinner Recommendation</p>
+      <p class="rec-text">Grilled paneer wrap with sautéed greens.</p>
+    </div>
+  </div></div>
+</div>
+
+<div>
+  <div class="frame-label">Over-Target State</div>
+  <div class="phone"><div class="screen">
+    <p class="eyebrow">Today</p>
+    <p class="date">Wednesday · 9:02 PM</p>
+    <div class="banner">180 calories over target today. No recommendation for now — tomorrow's a fresh start.</div>
+    <div class="entries">
+      <div class="entry-row"><span>Breakfast — Oatmeal &amp; berries</span><span>320</span></div>
+      <div class="entry-row"><span>Lunch — Paneer tikka bowl</span><span>440</span></div>
+      <div class="entry-row"><span>Dinner — Thali platter</span><span>1,440</span></div>
+    </div>
+    <div class="log-buttons">
+      <div class="btn btn-primary">Add Photo</div>
+      <div class="btn">Add Text</div>
+    </div>
+  </div></div>
+</div>
+
+<div>
+  <div class="frame-label">First login, before 10am</div>
+  <div class="phone"><div class="screen">
+    <p class="greeting">Good morning.</p>
+    <p class="tone-msg">You stayed within your target yesterday — nice, steady work.</p>
+    <div class="prompt-card">
+      <p class="prompt-q">Remaining today: <strong>2,000 calories</strong>. Log a meal now?</p>
+      <div class="prompt-actions">
+        <div class="btn btn-primary" style="flex:1;">Log a meal</div>
+        <div class="btn" style="flex:1;">Not now</div>
+      </div>
+    </div>
+    <div class="prompt-card">
+      <p class="prompt-q">Want a breakfast recommendation too?</p>
+      <div class="prompt-actions">
+        <div class="btn" style="flex:1;">Yes, suggest one</div>
+        <div class="btn" style="flex:1;">Skip</div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+</body>
+</html>

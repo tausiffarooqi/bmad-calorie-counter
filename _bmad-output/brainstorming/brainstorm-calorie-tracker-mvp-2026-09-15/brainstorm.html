@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calorie Tracker MVP — Brainstorm Keepsake</title>
+<style>
+  :root{
+    color-scheme: light;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:#150f1a;
+    color:#2c1c12;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4{
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+    font-weight:600;
+    margin:0;
+  }
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+  a{color:inherit;}
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;}
+
+  /* ---------- shared section shell ---------- */
+  section, header.hero{
+    position:relative;
+    padding: clamp(2.5rem, 6vw, 5rem) clamp(1.25rem, 5vw, 4rem);
+    overflow:hidden;
+  }
+  .section-inner{
+    max-width: 1120px;
+    margin: 0 auto;
+    position:relative;
+    z-index:2;
+  }
+  .kicker{
+    display:inline-flex;
+    align-items:center;
+    gap:.5em;
+    font-size:.78rem;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    font-weight:700;
+    opacity:.75;
+    margin-bottom:.9rem;
+  }
+  .section-head{
+    max-width: 760px;
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+  }
+  .section-head h2{
+    font-size: clamp(1.9rem, 4.2vw, 2.7rem);
+    line-height:1.15;
+    margin-bottom:.6rem;
+  }
+  .section-intro{
+    font-size: 1.05rem;
+    line-height:1.6;
+    max-width: 62ch;
+    opacity:.88;
+  }
+  .icon{
+    width:1em;height:1em;
+    stroke:currentColor;
+    fill:none;
+    stroke-width:1.6;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    vertical-align:-0.15em;
+  }
+  .badge-icon{
+    width: clamp(2.6rem, 4vw, 3.4rem);
+    height: clamp(2.6rem, 4vw, 3.4rem);
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:1rem;
+  }
+  .badge-icon .icon{width:56%;height:56%;}
+
+  /* ================= HERO / DAWN ================= */
+  header.hero{
+    min-height: 92vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    background: linear-gradient(180deg,#fff3e4 0%,#ffdcb0 45%,#ffbf86 100%);
+    color:#5b3212;
+    padding-top: clamp(4rem,10vh,6rem);
+    padding-bottom: clamp(3rem,8vh,5rem);
+  }
+  .sky-arc{
+    position:absolute;
+    top:6%;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(720px, 92vw);
+    opacity:.9;
+    z-index:1;
+  }
+  .sun-glow{
+    position:absolute;
+    width:340px;height:340px;
+    border-radius:50%;
+    background: radial-gradient(circle, rgba(255,214,140,.9) 0%, rgba(255,214,140,0) 70%);
+    top: 4%;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:0;
+  }
+  .hero-content{position:relative;z-index:2;max-width:820px;}
+  .eyebrow{
+    font-size:.85rem;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    font-weight:700;
+    color:#a2531b;
+    margin-bottom:1.1rem;
+  }
+  header.hero h1{
+    font-size: clamp(2.4rem, 7vw, 4.4rem);
+    line-height:1.05;
+    color:#4a2810;
+    margin-bottom:1rem;
+  }
+  .tagline{
+    font-size: clamp(1rem, 2.2vw, 1.25rem);
+    line-height:1.55;
+    color:#6b3c17;
+    max-width:52ch;
+    margin: 0 auto 2.2rem;
+  }
+  .hero-meta{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px,1fr));
+    gap:1rem;
+    text-align:left;
+    margin-top:.5rem;
+  }
+  .meta-card{
+    background: rgba(255,255,255,.55);
+    border: 1px solid rgba(255,255,255,.7);
+    backdrop-filter: blur(3px);
+    border-radius: 16px;
+    padding: 1rem 1.15rem;
+    box-shadow: 0 8px 24px -12px rgba(120,60,10,.35);
+  }
+  .meta-label{
+    display:block;
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-weight:700;
+    color:#a2531b;
+    margin-bottom:.3rem;
+  }
+  .meta-card span:last-child{font-size:.92rem;line-height:1.45;color:#4a2810;}
+  .scroll-cue{
+    margin-top: clamp(2rem,5vh,3.2rem);
+    font-size:.85rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:#a2531b;
+    opacity:.8;
+    animation: bob 2.6s ease-in-out infinite;
+  }
+  @keyframes bob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(6px);} }
+
+  /* ================= MORNING / MORPHOLOGICAL ================= */
+  #morphological{
+    background: linear-gradient(180deg,#ffbf86 0%,#ffd9a3 40%,#fff3d6 100%);
+    color:#4a3208;
+  }
+  #morphological .badge-icon{ background:#fff1d6; color:#c2670f; border:1px solid #f3c983;}
+  #morphological .kicker{color:#a4560f;}
+
+  .matrix{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.6rem;
+  }
+  .param-card{
+    background: #fffaf0;
+    border: 1px solid #f0d9a8;
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem 1.2rem;
+    box-shadow: 0 10px 22px -16px rgba(150,90,10,.4);
+    position:relative;
+  }
+  .param-card.privacy-cluster{
+    background: #fdf3e2;
+    border-style:dashed;
+  }
+  .param-num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:1.7rem;height:1.7rem;
+    border-radius:6px;
+    background:#f6a63c;
+    color:#fff;
+    font-size:.78rem;
+    font-weight:700;
+    margin-bottom:.6rem;
+  }
+  .privacy-cluster .param-num{background:#b6763a;}
+  .param-name{
+    font-weight:700;
+    font-size:.98rem;
+    margin-bottom:.4rem;
+    color:#5a3a0c;
+  }
+  .param-opts{
+    font-size:.85rem;
+    line-height:1.55;
+    color:#6b4d20;
+    margin:0;
+    padding-left:1.1rem;
+  }
+  .param-opts li{margin-bottom:.2rem;}
+  .matrix-note{
+    font-size:.82rem;
+    text-align:center;
+    color:#9a6a1e;
+    margin: -0.8rem 0 2.4rem;
+    font-style:italic;
+  }
+
+  .combinations{
+    background: rgba(255,255,255,.5);
+    border:1px solid #f0d9a8;
+    border-radius:20px;
+    padding: clamp(1.4rem,3vw,2.2rem);
+  }
+  .combinations h3{
+    font-size:1.15rem;
+    color:#5a3a0c;
+    margin-bottom:1.2rem;
+  }
+  .combo-card{
+    display:grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    align-items:flex-start;
+    background:#fff8ea;
+    border-radius:14px;
+    padding:1.1rem 1.3rem;
+    margin-bottom:1rem;
+    border:1px solid #f3dfab;
+  }
+  .combo-card:last-child{margin-bottom:0;}
+  .combo-badge{
+    width:2.4rem;height:2.4rem;
+    border-radius:50%;
+    background:#f6a63c;
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;
+    flex:none;
+  }
+  .combo-title{
+    font-weight:700;
+    color:#8a4a0d;
+    margin-bottom:.35rem;
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    flex-wrap:wrap;
+  }
+  .combo-title .icon{color:#c2670f;}
+  .combo-card p{margin:0;font-size:.92rem;line-height:1.6;color:#5a3f18;}
+
+  /* ================= MIDDAY / JOB TO BE DONE ================= */
+  #jtbd{
+    background: linear-gradient(180deg,#fff3d6 0%,#ffe2ad 35%,#ffb862 100%);
+    color:#4a2f0a;
+  }
+  #jtbd .badge-icon{background:#fff0d8;color:#c2670f;border:1px solid #f3c983;}
+  #jtbd .kicker{color:#a4560f;}
+
+  .jtbd-arc{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap: 0;
+  }
+  .jtbd-stage{
+    display:grid;
+    grid-template-columns: 3.2rem 1fr;
+    gap: 1.1rem;
+    padding-bottom: 2rem;
+    position:relative;
+  }
+  .jtbd-stage:not(:last-child)::before{
+    content:"";
+    position:absolute;
+    left: 1.55rem;
+    top: 3.2rem;
+    bottom: -0.2rem;
+    width: 2px;
+    background: linear-gradient(180deg, rgba(194,103,15,.6), rgba(194,103,15,.15));
+  }
+  .stage-dot{
+    width:3.2rem;height:3.2rem;
+    border-radius:50%;
+    background:#fff2da;
+    border:2px solid #e79a3b;
+    color:#a4560f;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;
+    z-index:2;
+  }
+  .stage-dot .icon{width:1.35rem;height:1.35rem;}
+  .stage-body{
+    background: rgba(255,255,255,.55);
+    border:1px solid rgba(231,154,59,.35);
+    border-radius:14px;
+    padding: 1rem 1.25rem;
+  }
+  .stage-label{
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-weight:700;
+    color:#a4560f;
+    margin-bottom:.35rem;
+  }
+  .stage-title{
+    font-size:1.08rem;
+    font-weight:700;
+    color:#4a2f0a;
+    margin-bottom:.4rem;
+  }
+  .stage-body p{
+    margin:0;
+    font-size:.92rem;
+    line-height:1.6;
+    color:#5c3f16;
+  }
+  .stage-body p + p{margin-top:.5rem;}
+  .stage-tag{
+    display:inline-block;
+    font-size:.72rem;
+    font-weight:700;
+    padding:.2rem .55rem;
+    border-radius:999px;
+    background:#fde3c2;
+    color:#8a4a0d;
+    margin-top:.6rem;
+  }
+
+  /* ================= DUSK / MOSCOW ================= */
+  #moscow{
+    background: linear-gradient(180deg,#ffb862 0%,#f88b4b 45%,#e0602f 100%);
+    color:#3a1608;
+  }
+  #moscow .badge-icon{background:#fff0e3;color:#c2440f;border:1px solid #f0b98d;}
+  #moscow .kicker{color:#7a2a0d;}
+  #moscow .section-intro,#moscow .section-head h2{color:#3a1608;}
+
+  .moscow-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px,1fr));
+    gap:1.1rem;
+  }
+  .moscow-col{
+    border-radius:18px;
+    padding:1.3rem 1.3rem 1.5rem;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    min-height: 100%;
+  }
+  .moscow-col h3{
+    font-size:1.05rem;
+    margin-bottom:.2rem;
+  }
+  .moscow-col .moscow-sub{
+    font-size:.78rem;
+    opacity:.85;
+    margin-bottom:1rem;
+    line-height:1.4;
+  }
+  .moscow-col ul{
+    margin:0;
+    padding-left:1.1rem;
+    font-size:.88rem;
+    line-height:1.6;
+    flex:1;
+  }
+  .moscow-col ul li{margin-bottom:.55rem;}
+  .moscow-col ul li b{display:block;font-size:.92rem;}
+  .moscow-col.must{background: linear-gradient(160deg,#9c1d1d,#c2440f);}
+  .moscow-col.should{background: linear-gradient(160deg,#b45309,#e0742a);}
+  .moscow-col.could{background: linear-gradient(160deg,#8a5a1a,#c2942a); }
+  .moscow-col.wont{background: linear-gradient(160deg,#5c5248,#82766a); opacity:.92;}
+  .moscow-col .moscow-icon{
+    width:2.4rem;height:2.4rem;
+    border-radius:50%;
+    background:rgba(255,255,255,.18);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:.7rem;
+  }
+
+  /* ================= NIGHT / SYNTHESIS ================= */
+  #synthesis{
+    background: linear-gradient(180deg,#3a1a1a 0%,#241536 45%,#150f2b 100%);
+    color:#f3e9da;
+    padding-bottom: clamp(3.5rem,8vw,6rem);
+  }
+  .stars{
+    position:absolute; inset:0;
+    background-image:
+      radial-gradient(1.6px 1.6px at 8% 22%, #fff, transparent),
+      radial-gradient(1.4px 1.4px at 18% 68%, #fff, transparent),
+      radial-gradient(1.8px 1.8px at 28% 12%, #ffe9c7, transparent),
+      radial-gradient(1.3px 1.3px at 38% 82%, #fff, transparent),
+      radial-gradient(1.7px 1.7px at 52% 34%, #fff, transparent),
+      radial-gradient(1.4px 1.4px at 63% 58%, #ffe9c7, transparent),
+      radial-gradient(1.6px 1.6px at 74% 20%, #fff, transparent),
+      radial-gradient(1.3px 1.3px at 85% 72%, #fff, transparent),
+      radial-gradient(1.8px 1.8px at 92% 40%, #fff, transparent),
+      radial-gradient(1.4px 1.4px at 12% 90%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 47% 6%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 96% 88%, #fff, transparent);
+    opacity:.85;
+    animation: twinkle 5s ease-in-out infinite alternate;
+    z-index:1;
+  }
+  @keyframes twinkle{ 0%{opacity:.55;} 100%{opacity:1;} }
+  #synthesis .badge-icon{background:rgba(255,255,255,.08);color:#f4c27a;border:1px solid rgba(244,194,122,.4);}
+  #synthesis .kicker{color:#f4c27a;}
+  #synthesis .section-intro{color:#e6d9c8;}
+
+  .core-loop{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:stretch;
+    justify-content:center;
+    gap: .6rem;
+    margin: 1.4rem 0 2.6rem;
+  }
+  .loop-node{
+    background: rgba(255,255,255,.06);
+    border:1px solid rgba(244,194,122,.35);
+    border-radius:16px;
+    padding: 1rem 1.2rem;
+    min-width: 170px;
+    flex:1 1 170px;
+    text-align:center;
+  }
+  .loop-node .icon{width:1.7rem;height:1.7rem;color:#f4c27a;margin-bottom:.5rem;}
+  .loop-node h4{font-size:.98rem;color:#fff;margin-bottom:.3rem;}
+  .loop-node p{font-size:.8rem;color:#cbb9a4;margin:0;line-height:1.45;}
+  .loop-arrow{
+    display:flex;align-items:center;justify-content:center;
+    color:#f4c27a;
+    font-size:1.4rem;
+    flex:0 0 auto;
+    padding: 0 .1rem;
+  }
+  .loop-note{
+    text-align:center;
+    font-size:.86rem;
+    color:#d9c4a3;
+    max-width:60ch;
+    margin: -1.6rem auto 2.8rem;
+    font-style:italic;
+  }
+
+  .patterns{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+    gap:1.2rem;
+    margin-bottom: 3rem;
+  }
+  .pattern-card{
+    background: rgba(255,255,255,.05);
+    border:1px solid rgba(244,194,122,.3);
+    border-radius:18px;
+    padding: 1.4rem 1.5rem;
+  }
+  .pattern-card h3{
+    font-size:1.1rem;
+    color:#f4c27a;
+    margin-bottom:.8rem;
+    display:flex;
+    align-items:center;
+    gap:.55rem;
+  }
+  .pattern-pair{
+    display:flex;
+    flex-direction:column;
+    gap:.7rem;
+  }
+  .pattern-item{
+    background: rgba(0,0,0,.18);
+    border-radius:10px;
+    padding:.7rem .9rem;
+    font-size:.86rem;
+    line-height:1.5;
+    color:#e6d9c8;
+  }
+  .pattern-item b{color:#fff;}
+  .pattern-connector{
+    text-align:center;
+    font-size:.75rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:#f4c27a;
+    opacity:.75;
+  }
+
+  blockquote.big-insight{
+    margin: 0 auto 2.6rem;
+    max-width: 760px;
+    text-align:center;
+    padding: clamp(1.6rem,4vw,2.6rem) clamp(1.2rem,4vw,2.4rem);
+    background: linear-gradient(160deg, rgba(244,194,122,.14), rgba(244,194,122,.04));
+    border: 1px solid rgba(244,194,122,.4);
+    border-radius: 22px;
+    position:relative;
+  }
+  blockquote.big-insight .quote-mark{
+    font-family: Georgia, serif;
+    font-size: 3.5rem;
+    line-height:1;
+    color:#f4c27a;
+    opacity:.6;
+    display:block;
+    margin-bottom:-0.6rem;
+  }
+  blockquote.big-insight p{
+    font-family: Georgia, "Iowan Old Style", serif;
+    font-size: clamp(1.15rem, 2.6vw, 1.55rem);
+    line-height:1.5;
+    color:#fff8ee;
+    margin:0 0 .8rem;
+  }
+  blockquote.big-insight cite{
+    font-style:normal;
+    font-size:.8rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:#f4c27a;
+    opacity:.8;
+  }
+
+  .scope-recap{
+    background: rgba(255,255,255,.05);
+    border:1px solid rgba(244,194,122,.3);
+    border-radius:18px;
+    padding: 1.4rem 1.6rem;
+    font-size:.88rem;
+    line-height:1.7;
+    color:#e6d9c8;
+    margin-bottom: 2.6rem;
+  }
+  .scope-recap b{color:#f4c27a;}
+
+  footer.colophon{
+    text-align:center;
+    font-size:.78rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#a3937c;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(244,194,122,.2);
+  }
+  footer.colophon .moon-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:.5rem;
+    margin-bottom:.6rem;
+    color:#f4c27a;
+  }
+
+  @media (max-width: 640px){
+    .combo-card{grid-template-columns: auto 1fr;}
+    .jtbd-stage{grid-template-columns: 2.6rem 1fr;}
+    .stage-dot{width:2.6rem;height:2.6rem;}
+    .stage-dot .icon{width:1.1rem;height:1.1rem;}
+  }
+</style>
+</head>
+<body>
+
+<svg class="visually-hidden" aria-hidden="true">
+  <defs>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12h2.6M18.9 12h2.6M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1.5 1.5 0 0 1 1.5 1.5V18A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18V9.5A1.5 1.5 0 0 1 4 8Z"/><circle cx="12" cy="13.3" r="3.4"/></symbol>
+    <symbol id="i-text" viewBox="0 0 24 24"><path d="M4 5.5h16M4 11h16M4 16.5h10"/></symbol>
+    <symbol id="i-plate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.4"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.4 2"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M20 4.5c-8.5 0-15 6-15 14.5 8.5 0 15-6 15-14.5Z"/><path d="M5.5 19 15 9.5"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.2 4.5 6.1v5.6c0 5 3.2 8.1 7.5 9.1 4.3-1 7.5-4.1 7.5-9.1V6.1L12 3.2Z"/><path d="M8.7 12.2l2.2 2.2 4.4-4.6"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="3.4"/><path d="M10.6 13 18 5.6M15.4 8.2l2.3 2.3M18 5.6l2.3 2.3"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.7 12 5.7 21.5 12 21.5 12 18 18.3 12 18.3 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.7"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.6 21 19.4H3L12 3.6Z"/><path d="M12 9.6v4.4M12 16.8h.01"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><path d="M15.3 8.7 13.4 13.4 8.7 15.3l1.9-4.7 4.7-1.9Z"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.4-4.6-9.7-9C.7 7.3 2.4 4 5.9 4c2 0 3.4 1.1 4.1 2.4C10.7 5.1 12.1 4 14.1 4c3.5 0 5.2 3.3 3.6 7-2.3 4.4-9.7 9-9.7 9Z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 10.5a6 6 0 0 1 12 0c0 4.2 1.3 5.4 1.3 5.4H4.7S6 14.7 6 10.5Z"/><path d="M10 18.8a2.2 2.2 0 0 0 4 0"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.6" r="3.1"/><path d="M3.4 19c0-3.4 2.5-5.6 5.6-5.6s5.6 2.2 5.6 5.6"/><circle cx="17.2" cy="9.2" r="2.4"/><path d="M15.4 13.5c2.4.2 4.2 2.1 4.2 5"/></symbol>
+    <symbol id="i-question" viewBox="0 0 24 24"><path d="M9.1 9a3 3 0 1 1 4.8 2.4c-1.3.9-1.9 1.5-1.9 3"/><path d="M12 17.6h.01"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 13.6A8.4 8.4 0 1 1 10.4 4a6.6 6.6 0 0 0 9.6 9.6Z"/></symbol>
+    <symbol id="i-loop" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.6-5.7M20 6v4h-4"/><path d="M20 12a8 8 0 0 1-13.6 5.7M4 18v-4h4"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M6 7h12M6 7l-3.2 6.4a3.2 3.2 0 0 0 6.4 0L6 7Zm12 0-3.2 6.4a3.2 3.2 0 0 0 6.4 0L18 7Z"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 4.7-9 4.7-9-4.7L12 3Z"/><path d="m3 12.7 9 4.7 9-4.7M3 17.4l9 4.7 9-4.7"/></symbol>
+  </defs>
+</svg>
+
+<header class="hero">
+  <div class="sun-glow" aria-hidden="true"></div>
+  <svg class="sky-arc" viewBox="0 0 720 160" aria-hidden="true">
+    <path d="M40 150 C 150 -30, 570 -30, 680 150" fill="none" stroke="#c2670f" stroke-width="1.5" stroke-dasharray="2 10" opacity="0.5"/>
+    <circle cx="360" cy="42" r="20" fill="#ffcf7d" opacity="0.9"/>
+  </svg>
+  <div class="hero-content">
+    <p class="eyebrow">Brainstorming Session · 15 September 2026</p>
+    <h1>Calorie Tracker MVP</h1>
+    <p class="tagline">Photo &amp; text meal logging, calorie math, meal recommendations — scoped as a supportive daily coach, not a strict accountant.</p>
+    <div class="hero-meta">
+      <div class="meta-card">
+        <span class="meta-label">Goal</span>
+        <span>Scope a minimal, fast-to-build first version — a demonstration of building quickly with BMad.</span>
+      </div>
+      <div class="meta-card">
+        <span class="meta-label">Scope</span>
+        <span>Web-only for now. Telegram and WhatsApp deliberately deferred.</span>
+      </div>
+      <div class="meta-card">
+        <span class="meta-label">Session</span>
+        <span>Facilitated brainstorm · two techniques · status: complete.</span>
+      </div>
+    </div>
+  </div>
+  <p class="scroll-cue">the day begins</p>
+</header>
+
+<section id="morphological">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="badge-icon"><svg class="icon"><use href="#i-layers"/></svg></span>
+      <p class="kicker"><svg class="icon"><use href="#i-compass"/></svg> Technique 01 — Morphological Analysis (Deep)</p>
+      <h2>Laying every ingredient on the counter</h2>
+      <p class="section-intro">The product was broken into its independent parameters — a full pantry of design decisions — so each one could be considered on its own before deciding which combinations belong in the MVP.</p>
+    </div>
+
+    <div class="matrix">
+      <div class="param-card">
+        <span class="param-num">1</span>
+        <div class="param-name">Meal input mode</div>
+        <ul class="param-opts">
+          <li>Photo upload</li>
+          <li>Free-text description (e.g. "one double cheeseburger and medium fries with a can of diet soda")</li>
+        </ul>
+      </div>
+      <div class="param-card">
+        <span class="param-num">2</span>
+        <div class="param-name">Calorie estimation pipeline</div>
+        <ul class="param-opts">
+          <li>Photo → vision recognition → generated text description → calorie calc</li>
+          <li>Text → direct calorie calc</li>
+          <li>Insufficient detail (either mode) → re-prompt user to retry</li>
+        </ul>
+      </div>
+      <div class="param-card">
+        <span class="param-num">3</span>
+        <div class="param-name">Response composition per submission</div>
+        <ul class="param-opts">
+          <li>Estimated calories of the meal just logged</li>
+          <li>Total calories remaining for the day</li>
+          <li>One meal recommendation per remaining meal of the day</li>
+        </ul>
+      </div>
+      <div class="param-card">
+        <span class="param-num">4</span>
+        <div class="param-name">Time-of-day meal-count logic</div>
+        <ul class="param-opts">
+          <li>5am–12pm submission → 2 recommendations (lunch + dinner)</li>
+          <li>12pm–10pm submission → 1 recommendation (dinner)</li>
+          <li>Maps time windows to remaining meal slots</li>
+        </ul>
+      </div>
+      <div class="param-card">
+        <span class="param-num">5</span>
+        <div class="param-name">Entry classification</div>
+        <ul class="param-opts">
+          <li>Meal vs. snack/beverage — auto-detected</li>
+          <li>Snacks/tea/coffee update remaining calories</li>
+          <li>...but don't decrement the meal-recommendation count</li>
+        </ul>
+      </div>
+      <div class="param-card">
+        <span class="param-num">6</span>
+        <div class="param-name">Recommendation content driver</div>
+        <ul class="param-opts">
+          <li>MVP: single account-level preference — vegetarian vs. non-vegetarian, set on the account page</li>
+          <li>Deferred: macros, cuisine, allergies, finer-grained preferences</li>
+        </ul>
+      </div>
+      <div class="param-card">
+        <span class="param-num">7</span>
+        <div class="param-name">Daily target &amp; day boundary</div>
+        <ul class="param-opts">
+          <li>Day runs on the user's local timezone, 5am to 12am midnight</li>
+          <li>Daily calorie target set by the user on a preferences page, defaulting to a standard adult intake</li>
+        </ul>
+      </div>
+      <div class="param-card privacy-cluster">
+        <span class="param-num">8</span>
+        <div class="param-name">Sensitive-data surface</div>
+        <ul class="param-opts">
+          <li>Daily target &amp; actual intake are personal data the user may not want shared — even if not classic PII</li>
+        </ul>
+      </div>
+      <div class="param-card privacy-cluster">
+        <span class="param-num">9</span>
+        <div class="param-name">Credential protection</div>
+        <ul class="param-opts">
+          <li>Email/password login credentials need protection</li>
+        </ul>
+      </div>
+      <div class="param-card privacy-cluster">
+        <span class="param-num">10</span>
+        <div class="param-name">Photo-content risk</div>
+        <ul class="param-opts">
+          <li>Users might accidentally upload personal (non-meal) photos</li>
+          <li>Mitigate via an in-app warning to only upload meal photos</li>
+        </ul>
+      </div>
+      <div class="param-card privacy-cluster">
+        <span class="param-num">11</span>
+        <div class="param-name">Threat model</div>
+        <ul class="param-opts">
+          <li>Primary concern: bad actors harvesting personal data for ad-targeting/marketing — not just generic account takeover</li>
+        </ul>
+      </div>
+    </div>
+    <p class="matrix-note">11 parameters on the table — dashed cards (8–11) are the privacy/security cluster that later regroups as one MoSCoW bucket.</p>
+
+    <div class="combinations">
+      <h3>Two combinations put to the test</h3>
+      <div class="combo-card">
+        <span class="combo-badge">1</span>
+        <div>
+          <div class="combo-title"><svg class="icon"><use href="#i-leaf"/></svg> Entry Classification × Recommendation Driver</div>
+          <p>Snacks and beverages never get their own recommendation — the vegetarian/non-vegetarian driver only applies to meals. A snack's calories are simply subtracted from the remaining daily budget, shrinking the calorie allotment left for the remaining meal recommendations.</p>
+        </div>
+      </div>
+      <div class="combo-card">
+        <span class="combo-badge">2</span>
+        <div>
+          <div class="combo-title"><svg class="icon"><use href="#i-clock"/></svg> Time-of-Day Logic × Over-Target Handling</div>
+          <p>Refined windows closed the earlier gaps: 5am–12pm → 2 recommendations (lunch + dinner); 12pm–10pm → 1 recommendation (dinner). After 10pm, a recommendation is only given if the user hasn't yet met their daily target. And confirmed: once the user exceeds their daily target — at any time of day — recommendations stop entirely and the app instead reports the excess calories consumed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="jtbd">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="badge-icon"><svg class="icon"><use href="#i-heart"/></svg></span>
+      <p class="kicker"><svg class="icon"><use href="#i-sun"/></svg> Technique 02 — Job to Be Done (Structured)</p>
+      <h2>Following the day's first ask to its emotional root</h2>
+      <p class="section-intro">From the plain surface request down to what the user actually needs to feel — traced as one arc, from morning login to the alternative this app replaces.</p>
+    </div>
+
+    <div class="jtbd-arc">
+      <div class="jtbd-stage">
+        <span class="stage-dot"><svg class="icon"><use href="#i-plate"/></svg></span>
+        <div class="stage-body">
+          <div class="stage-label">Surface job</div>
+          <div class="stage-title">"Log what I ate, and tell me what to eat next."</div>
+          <p>Submit a meal by photo or text, get a calorie estimate, and find out what's left to eat for the rest of the day.</p>
+        </div>
+      </div>
+      <div class="jtbd-stage">
+        <span class="stage-dot"><svg class="icon"><use href="#i-compass"/></svg></span>
+        <div class="stage-body">
+          <div class="stage-label">Deeper motivation</div>
+          <div class="stage-title">Replace guesswork with a concrete plan</div>
+          <p>Not obsessive tracking for its own sake — a want to feel steered toward a good decision, without having to do the math or the thinking.</p>
+        </div>
+      </div>
+      <div class="jtbd-stage">
+        <span class="stage-dot"><svg class="icon"><use href="#i-bell"/></svg></span>
+        <div class="stage-body">
+          <div class="stage-label">Trigger moment</div>
+          <div class="stage-title">First login of the day</div>
+          <p>The app shows remaining calories and asks if the user wants to log a meal now. If they decline, it still shows recommendations for the remaining meals based on current progress.</p>
+          <p>If that first login is before 10am, it additionally asks whether the user wants a breakfast recommendation — confirmed as its own third meal slot, separate from the lunch + dinner pair.</p>
+          <span class="stage-tag">Confirmed: breakfast is a distinct opt-in slot</span>
+        </div>
+      </div>
+      <div class="jtbd-stage">
+        <span class="stage-dot"><svg class="icon"><use href="#i-heart"/></svg></span>
+        <div class="stage-body">
+          <div class="stage-label">Emotional tone</div>
+          <div class="stage-title">Coach, not accountant</div>
+          <p>The first-login message adapts to yesterday's performance: congratulatory and confidence-building if the user stayed within target, supportive and encouraging — never shaming — if they went over.</p>
+        </div>
+      </div>
+      <div class="jtbd-stage">
+        <span class="stage-dot"><svg class="icon"><use href="#i-users"/></svg></span>
+        <div class="stage-body">
+          <div class="stage-label">Social dimension</div>
+          <div class="stage-title">Deliberately none</div>
+          <p>Decision: no social or accountability features for now. This is scoped as a solo, private experience.</p>
+        </div>
+      </div>
+      <div class="jtbd-stage">
+        <span class="stage-dot"><svg class="icon"><use href="#i-question"/></svg></span>
+        <div class="stage-body">
+          <div class="stage-label">Status-quo alternative</div>
+          <div class="stage-title">What people do without this app: guess</div>
+          <p>Most people have no structured way to estimate what they've eaten, or to decide what to eat next. That guesswork is the real competitor.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="moscow">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="badge-icon"><svg class="icon"><use href="#i-scale"/></svg></span>
+      <p class="kicker"><svg class="icon"><use href="#i-scale"/></svg> Convergence</p>
+      <h2>Where the two techniques met: the MoSCoW cut</h2>
+      <p class="section-intro">Every parameter and every job-stage insight landed in one of four buckets — this is the line drawn between "MVP" and "later."</p>
+    </div>
+
+    <div class="moscow-grid">
+      <div class="moscow-col must">
+        <span class="moscow-icon"><svg class="icon"><use href="#i-target"/></svg></span>
+        <h3>Must</h3>
+        <div class="moscow-sub">The MVP does not function without these.</div>
+        <ul>
+          <li><b>A — Input &amp; recognition</b>Photo/text meal logging and the calorie-estimation pipeline.</li>
+          <li><b>B — Calorie tracking &amp; response</b>Estimated calories logged, remaining daily budget, response composition.</li>
+          <li><b>C — Recommendation logic</b>Time-of-day windows, entry classification, veg/non-veg driver, over-target override.</li>
+          <li><b>D — Daily target &amp; day boundary</b>5am–12am window, user-set (or default) daily calorie target.</li>
+        </ul>
+      </div>
+      <div class="moscow-col should">
+        <span class="moscow-icon"><svg class="icon"><use href="#i-bell"/></svg></span>
+        <h3>Should</h3>
+        <div class="moscow-sub">Strongly wanted — the coaching moment that makes it feel alive.</div>
+        <ul>
+          <li><b>E — First-login / daily engagement flow</b>Morning check-in, tone-adaptive message, breakfast opt-in ask.</li>
+        </ul>
+      </div>
+      <div class="moscow-col could">
+        <span class="moscow-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
+        <h3>Could</h3>
+        <div class="moscow-sub">Prototype stage — not a hard requirement, include opportunistically if low-hassle.</div>
+        <ul>
+          <li><b>F — Account &amp; security</b>Credential protection, sensitive-data handling, photo-only warning, ad-targeting threat model — bucketed together.</li>
+        </ul>
+      </div>
+      <div class="moscow-col wont">
+        <span class="moscow-icon"><svg class="icon"><use href="#i-alert"/></svg></span>
+        <h3>Won't — this time</h3>
+        <div class="moscow-sub">Explicitly out of scope for this pass.</div>
+        <ul>
+          <li><b>G — Deferred</b>Telegram/WhatsApp channels, fine-grained diet preferences (macros, cuisine, allergies), social/accountability features.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="synthesis">
+  <div class="stars" aria-hidden="true"></div>
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="badge-icon"><svg class="icon"><use href="#i-moon"/></svg></span>
+      <p class="kicker"><svg class="icon"><use href="#i-moon"/></svg> Synthesis</p>
+      <h2>Closing the day: what the session actually found</h2>
+      <p class="section-intro">Two techniques, run one after the other, converged on the same handful of ideas seen from different angles. Here is the loop they describe, and the patterns hiding underneath it.</p>
+    </div>
+
+    <div class="core-loop">
+      <div class="loop-node">
+        <svg class="icon"><use href="#i-camera"/></svg>
+        <h4>Submit</h4>
+        <p>Photo or free text</p>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-node">
+        <svg class="icon"><use href="#i-target"/></svg>
+        <h4>Estimate</h4>
+        <p>Vision → text → calc, or text → calc directly</p>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-node">
+        <svg class="icon"><use href="#i-scale"/></svg>
+        <h4>Remaining budget</h4>
+        <p>Snacks shrink it silently; meals count against it</p>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-node">
+        <svg class="icon"><use href="#i-compass"/></svg>
+        <h4>Recommend</h4>
+        <p>One per remaining meal slot, tuned by diet + time of day</p>
+      </div>
+    </div>
+    <p class="loop-note">The core loop, every submission, all day — this is the whole product in four steps.</p>
+
+    <div class="patterns">
+      <div class="pattern-card">
+        <h3><svg class="icon"><use href="#i-heart"/></svg> The coaching layer, applied twice</h3>
+        <div class="pattern-pair">
+          <div class="pattern-item"><b>In the moment —</b> the over-target rule: once the daily calorie target is exceeded, at any time of day, recommendations stop and the app instead reports the excess.</div>
+          <div class="pattern-connector">↕ same principle</div>
+          <div class="pattern-item"><b>Retrospectively —</b> the tone-adaptive first-login message: congratulatory if yesterday stayed within target, supportive and encouraging — never shaming — if it didn't.</div>
+        </div>
+      </div>
+      <div class="pattern-card">
+        <h3><svg class="icon"><use href="#i-loop"/></svg> Classify → conditionally recommend, at two levels</h3>
+        <div class="pattern-pair">
+          <div class="pattern-item"><b>Entry level —</b> meal vs. snack/beverage classification decides whether an entry claims one of the day's recommendation slots.</div>
+          <div class="pattern-connector">↕ same shape</div>
+          <div class="pattern-item"><b>Account level —</b> the vegetarian/non-vegetarian preference decides what a recommendation actually contains.</div>
+        </div>
+      </div>
+    </div>
+
+    <blockquote class="big-insight">
+      <span class="quote-mark" aria-hidden="true">&ldquo;</span>
+      <p>The current alternative to this app is guessing. Most people have no structured way to estimate what they've eaten, or to decide what to eat next — replacing that guesswork with a concrete estimate and an actionable recommendation is the whole point.</p>
+      <cite>Core value proposition — surfaced during Job to Be Done</cite>
+    </blockquote>
+
+    <div class="scope-recap">
+      <b>MVP, in one line:</b> log a meal by photo or text, get an honest estimate, see what's left in the day, and get one supportive recommendation per remaining meal — with a morning check-in that greets you like a coach, not a ledger.
+    </div>
+
+    <footer class="colophon">
+      <div class="moon-row"><svg class="icon"><use href="#i-moon"/></svg><span>End of session</span></div>
+      Mode: Facilitator &nbsp;·&nbsp; Status: Complete &nbsp;·&nbsp; Updated 2026-09-15 22:55
+    </footer>
+  </div>
+</section>
+
+</body>
+</html>
