@@ -2,11 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createProfile } from "@/lib/services/profiles";
-
-// Postgres `integer` max — a target above this would fail the profiles
-// insert after the Auth user already exists. 20,000 kcal is also a sane
-// real-world ceiling no legitimate target would exceed.
-const MAX_DAILY_CALORIE_TARGET = 20_000;
+import { MAX_DAILY_CALORIE_TARGET } from "@/lib/constants";
 
 export async function POST(request: Request) {
   let body: { email?: string; password?: string; dailyCalorieTarget?: number };
