@@ -1,3 +1,4 @@
+import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Temporary foundation showcase for Epic 0 (UX Foundation). Exercises the
@@ -7,6 +8,11 @@ import { Button } from "@/components/ui/button";
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
+      <Button asChild variant="ghost" size="icon" className="self-end">
+        <a href="/preferences" aria-label="Open account settings" title="Open account settings">
+          <Settings />
+        </a>
+      </Button>
       <p className="text-label uppercase text-muted-foreground">Design token foundation</p>
       <p className="font-sans text-display-number text-primary">1,240</p>
       <div className="w-full max-w-sm rounded-md border border-border bg-card p-4">
