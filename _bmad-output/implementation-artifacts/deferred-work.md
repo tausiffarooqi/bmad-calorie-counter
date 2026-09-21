@@ -43,3 +43,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-3-manage-daily-calorie-target-dietary-preference.md`
   summary: API request bodies are validated by hand (XOR checks, manual type guards) with no shared schema library (e.g. zod) across the three routes that now exist (register, preferences) — an unexpected extra field is silently ignored rather than rejected, safe today only because service functions manually whitelist columns.
   evidence: Matches the codebase's existing hand-rolled validation convention everywhere; introducing a validation library is a project-wide decision bigger than any single story.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-1-log-a-meal-via-text.md`
+  summary: The Log Entry dialog's double-submit guard is state-based (`if (status === "submitting") return`) rather than a synchronous ref, leaving a narrow window for two rapid clicks to both proceed.
+  evidence: Textarea can't submit via Enter (multiline), and React's render timing makes two genuinely concurrent clicks unlikely in practice — same disposition given to the identical finding in Story 1.2's Login page.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-1-log-a-meal-via-text.md`
+  summary: The new `entries` table has `isRLSEnabled: false`, relying entirely on the service-layer (AD-1) for per-user access control with no DB-level backstop.
+  evidence: Mirrors the pre-existing, already-accepted pattern on `profiles` — not introduced by this story specifically. Closing it (enabling RLS with a per-user policy) is a security-hardening decision better made once across all tables than piecemeal per story.

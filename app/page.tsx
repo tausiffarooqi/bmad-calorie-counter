@@ -1,5 +1,6 @@
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LogEntryDialog } from "@/app/log-entry-dialog";
 
 // Temporary foundation showcase for Epic 0 (UX Foundation). Exercises the
 // Muted Earth Editorial tokens (Story 0.1) and the global focus-visible
@@ -24,8 +25,9 @@ export default function Home() {
         </p>
       </div>
       <div className="flex gap-3">
+        {/* Add Photo stays inert — Story 2.2 wires it up. */}
         <Button>Add Photo</Button>
-        <Button variant="outline">Add Text</Button>
+        <LogEntryDialog />
       </div>
       {/* Plain, non-shadcn interactive element — proves the global
           :focus-visible rule (Story 0.2) applies beyond Button. */}

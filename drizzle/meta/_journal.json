@@ -8,6 +8,20 @@
       "when": 1789934870966,
       "tag": "0000_freezing_thunderbird",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790006532419,
+      "tag": "0001_slim_aqueduct",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790008230913,
+      "tag": "0002_vengeful_tomas",
+      "breakpoints": true
     }
   ]
 }

@@ -7,7 +7,7 @@ paradigm: 'layered, with one hexagonal port (EstimationProvider)'
 scope: 'All features/FRs in prd-bmad-calorie-counter-2026-09-15 (Calorie Tracker MVP)'
 status: final
 created: '2026-09-16'
-updated: '2026-09-19'
+updated: '2026-09-21'
 binds: [FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23]
 sources:
   - '_bmad-output/planning-artifacts/prds/prd-bmad-calorie-counter-2026-09-15/prd.md'
@@ -46,7 +46,7 @@ Everything outside `lib/estimation/` is plain layered — no port/adapter ceremo
 
 - **Binds:** FR-2, FR-3, FR-4, FR-7
 - **Prevents:** a provider-specific request/response shape (Gemini's, or a future GPT-4o-mini/two-stage-hybrid swap per the addendum's v2 note) leaking into budget/recommendation logic; two AD-2-compliant implementations handling FR-4's "insufficient detail" case incompatibly (one throwing, one returning)
-- **Rule:** all calorie estimation goes through one `EstimationProvider` interface — `estimate(input: Photo | Text): { ok: true, description: string, calories: number } | { ok: false, reason: 'insufficient_detail' }`. The `false` branch is FR-4's retry path, never an exception. Classification (FR-7, Meal vs. Snack/Beverage) is never inside an adapter — it's a downstream call to `entry-classifier` on the `ok: true` output. `GeminiAdapter` (model `gemini-3.8-flash`) is the only bound implementation for MVP, defaulting to `thinking_level: "low"` for cost/speed — but SM-1's <5s target is a **soft** goal, not enforced here (see AD-9); this default can be revisited toward a higher thinking level if estimation quality warrants it.
+- **Rule:** all calorie estimation goes through one `EstimationProvider` interface — `estimate(input: Photo | Text): { ok: true, description: string, calories: number } | { ok: false, reason: 'insufficient_detail' }`. The `false` branch is FR-4's retry path, never an exception. Classification (FR-7, Meal vs. Snack/Beverage) is never inside an adapter — it's a downstream call to `entry-classifier` on the `ok: true` output. `GeminiAdapter` (model `gemini-3.5-flash-lite`, called via the `gemini-flash-lite-latest` alias — see Deferred for the model-selection history) is the only bound implementation for MVP, defaulting to `thinking_level: "low"` for cost/speed — but SM-1's <5s target is a **soft** goal, not enforced here (see AD-9); this default can be revisited toward a higher thinking level if estimation quality warrants it.
 
 ### AD-3 — Supabase is the sole data + auth backend `[ADOPTED]`
 
@@ -108,10 +108,12 @@ Everything outside `lib/estimation/` is plain layered — no port/adapter ceremo
 | Tailwind CSS | 4.3.3 |
 | Drizzle ORM | 0.45.2 |
 | Supabase (self-hosted: Postgres + GoTrue Auth) | must match the version already running on the Hostinger VPS — confirm before scaffolding local dev via CLI (see Deferred) |
-| Google Gemini API | `gemini-3.8-flash`, `thinking_level: "low"` (see AD-2) |
+| Google Gemini API | `gemini-3.5-flash-lite` (via the `gemini-flash-lite-latest` alias), `thinking_level: "low"` (see AD-2) |
 | Vercel | hosting platform (app only) |
 
 > **Setup gotcha (TypeScript 7, superseded 2026-09-19):** TypeScript 7.0.2's npm package ships only the Go-native compiler (no `lib/typescript.js` JS Compiler API) — plain `next build` needed `experimental.useTypeScriptCli: true` to detect it. Moot for now: discovered during Story 0.1 implementation that `typescript-eslint` doesn't yet support TS7 (upstream fix pending), so the project was downgraded to TypeScript 6.0.3 and the `useTypeScriptCli` flag removed. Revisit both once typescript-eslint ships TS7 support.
+
+> **Setup gotcha (Gemini model selection, superseded 2026-09-21):** `gemini-3.8-flash` was AD-2's original bound model. During Story 2.1's live verification, the free-tier key hit both persistent transient `503` "high demand" errors and a hard 20-requests/day quota ceiling, blocking testing entirely. Switched to `gemini-3.5-flash-lite` (called via the `gemini-flash-lite-latest` alias, matching the same alias-not-pinned-name pattern already used for the full tier) after live-testing it directly against the actual `GeminiAdapter` prompt/schema: correct calorie estimates, correct insufficient-detail judgment, confirmed multimodal image support for Story 2.2, and zero `503`s across all test calls — more reliable than the full tier, not just cheaper. Revisit toward a higher-tier model only if real-world estimation quality on live food photos (Story 2.2) turns out to need it.
 
 ## Structural Seed
 
@@ -119,7 +121,7 @@ Everything outside `lib/estimation/` is plain layered — no port/adapter ceremo
 graph TB
     Browser["User's phone/desktop browser"]
     Vercel["Next.js app (Vercel)"]
-    Gemini["Google Gemini API\n(gemini-3.8-flash)"]
+    Gemini["Google Gemini API\n(gemini-3.5-flash-lite)"]
     Supabase["Self-hosted Supabase\n(Hostinger VPS):\nPostgres + GoTrue Auth"]
 
     Browser -->|HTTPS| Vercel
