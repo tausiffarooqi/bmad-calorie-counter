@@ -13,3 +13,18 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-1-user-registration.md`
   summary: supabase/config.toml (the CLI's own default from `supabase init`) enables several unused services (S3 storage protocol, vector/analytics, edge runtime, extra OAuth providers).
   evidence: Not controlled by this story's registration logic. Worth trimming later since it makes the architecture's noted local-vs-Hostinger-VPS Supabase version/config parity check noisier than necessary.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-2-user-login.md`
+  summary: proxy.ts redirects to /login on any unauthenticated protected-route visit without preserving the originally-requested path (no `?next=` param), so post-login the user always lands on `/` rather than where they were headed.
+  evidence: Zero user-visible impact today since `/` is the only protected route that exists. Revisit once Epic 2+ adds real protected routes (meal logging, history, etc.) — add a `next` search param on the redirect-to-login and read it back on successful login instead of hard-coding `window.location.href = "/"`.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-2-user-login.md`
+  summary: proxy.ts's `supabase.auth.getUser()` call is unguarded — no try/catch, no timeout — so a Supabase Auth outage or slow response either throws an unhandled error or hangs every request in the app, including `/login` itself, and its `error` return value is silently discarded, making "no session" and "couldn't verify session" indistinguishable.
+  evidence: Not exercised by manual testing against a healthy local instance. Needs a product decision (fail-open vs. fail-closed under an Auth-service outage, and whether to show a dedicated error state) that's bigger than this story's scope.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-2-user-login.md`
+  summary: Login and Register both lack page-specific `<title>`/metadata (`export const metadata`), falling back to the layout's generic title.
+  evidence: Cosmetic, pre-existing on both auth pages since Story 1.1; not a Story 1.2 regression. Fix both together whenever someone next touches either page.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-2-user-login.md`
+  summary: Login's submit button relies on React state (`disabled={submitting}`) to block double-submission, which isn't synchronous — a very fast double-click/double-Enter before the disabled state commits could fire two concurrent `signInWithPassword()` calls.
+  evidence: Narrow race, no observed real-world occurrence; existing `disabled` state substantially mitigates it. A synchronous ref-based lock would close the remaining gap if this is ever observed live.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-2-user-login.md`
+  summary: Login uses a hard reload (`window.location.href`) after `signInWithPassword()` to dodge a session-cookie timing race with the proxy; Register still uses `router.push()` after its own signup flow, which looks like the same pattern at a glance.
+  evidence: Investigated directly — not the same risk. Register's session cookie is set via the `Set-Cookie` header on the completed `/api/auth/register` HTTP response (guaranteed synced by the time `await fetch()` resolves) before `router.push()` ever runs. Login's cookie is set via the browser client's in-page `document.cookie` write inside `signInWithPassword()`, which is the actual documented risky pattern the hard-nav fix targets. Revisit Register only if the same "bounced back" symptom is ever observed live there — don't blindly copy the hard-nav fix without evidence it's needed.
