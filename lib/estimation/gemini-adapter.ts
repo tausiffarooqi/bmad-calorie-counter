@@ -62,6 +62,18 @@ export class GeminiAdapter implements EstimationProvider {
       throw new Error("GEMINI_API_KEY is not set — check .env.local.");
     }
 
+    // Same responseSchema/isValidPayload validation drives both branches —
+    // only the request `parts` differ (text prompt vs. vision prompt + the
+    // inline image). The photo's bytes are inlined directly into this one
+    // request body and never touch disk, the DB, or Supabase Storage (AD-4).
+    const parts =
+      input.mode === "text"
+        ? [{ text: buildTextPrompt(input.description) }]
+        : [
+            { text: buildPhotoPrompt() },
+            { inlineData: { mimeType: input.mimeType, data: input.base64 } },
+          ];
+
     const response = await fetch(GEMINI_MODEL_ENDPOINT, {
       method: "POST",
       headers: {
@@ -72,7 +84,7 @@ export class GeminiAdapter implements EstimationProvider {
         contents: [
           {
             role: "user",
-            parts: [{ text: buildPrompt(input.description) }],
+            parts,
           },
         ],
         generationConfig: {
@@ -139,7 +151,7 @@ export class GeminiAdapter implements EstimationProvider {
   }
 }
 
-function buildPrompt(description: string): string {
+function buildTextPrompt(description: string): string {
   // Defense-in-depth against the description breaking out of the quoted
   // block via its own """ sequence and appending instructions of its own
   // — the structural payload validation above is the real backstop
@@ -157,6 +169,21 @@ Decide whether the description has enough detail (identifiable food items, and r
 
 - If it does NOT have enough detail (e.g. too vague, no identifiable food, no sense of quantity), set "sufficient_detail" to false. Do not guess a calorie value in this case — set "calories" to 0 and "description" to the original text unchanged.
 - If it DOES have enough detail, set "sufficient_detail" to true, set "description" to a concise, cleaned-up restatement of what was eaten, and set "calories" to your best single-integer estimate of the total calories for everything described. Never return a range — always one whole number.
+
+Respond only via the provided JSON schema.`;
+}
+
+// Vision-branch prompt (Story 2.2). Classification (Meal vs. Snack/Beverage)
+// is explicitly out of scope here — Epic 3 adds that as a separate
+// downstream call; this prompt only judges food-identifiability and
+// estimates calories, exactly like the text branch.
+function buildPhotoPrompt(): string {
+  return `You are a nutrition estimation assistant for a calorie-tracking app. A user submitted a photo of a meal they ate.
+
+Look at the image and decide whether it clearly shows identifiable food — in focus, lit, and framed well enough — to produce a reasonable calorie estimate.
+
+- If the image is NOT clearly food (e.g. blurry, too dark, too distant, cropped oddly, or not food at all), set "sufficient_detail" to false. Do not guess a calorie value in this case — set "calories" to 0 and "description" to a short neutral note (e.g. "photo unclear").
+- If the image DOES clearly show identifiable food, set "sufficient_detail" to true, set "description" to a concise description of what's shown (identifiable items and roughly how much of each), and set "calories" to your best single-integer estimate of the total calories for everything shown. Never return a range — always one whole number.
 
 Respond only via the provided JSON schema.`;
 }

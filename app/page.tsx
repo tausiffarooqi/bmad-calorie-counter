@@ -1,6 +1,7 @@
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LogEntryDialog } from "@/app/log-entry-dialog";
+import { LogPhotoDialog } from "@/app/log-photo-dialog";
 
 // Temporary foundation showcase for Epic 0 (UX Foundation). Exercises the
 // Muted Earth Editorial tokens (Story 0.1) and the global focus-visible
@@ -24,10 +25,19 @@ export default function Home() {
           &ldquo;Try a grilled paneer wrap with saut&eacute;ed greens.&rdquo;
         </p>
       </div>
-      <div className="flex gap-3">
-        {/* Add Photo stays inert — Story 2.2 wires it up. */}
-        <Button>Add Photo</Button>
-        <LogEntryDialog />
+      <div className="flex flex-col items-center gap-1.5">
+        <div className="flex gap-3">
+          <LogPhotoDialog />
+          <LogEntryDialog />
+        </div>
+        {/* Persistent, non-dismissible notice (FR-21) — small print, no
+            card/border treatment, never a dialog. Wired via aria-describedby
+            on the "Add Photo" button so assistive tech hears this before the
+            native picker takes over, not just sighted users reading nearby
+            text. */}
+        <p id="photo-only-notice" className="text-xs text-muted-foreground">
+          Meal photos only, please — no other kinds of photos.
+        </p>
       </div>
       {/* Plain, non-shadcn interactive element — proves the global
           :focus-visible rule (Story 0.2) applies beyond Button. */}

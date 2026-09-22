@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,59 +13,25 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { MAX_DESCRIPTION_LENGTH } from "@/lib/constants";
-
-// Only the states this story needs — a bare working state per outcome, not
-// the polished treatment (Story 2.3 owns that; Story 2.5 owns AT
-// announcement).
-type Status = "idle" | "submitting" | "success" | "insufficient_detail" | "error";
-
-type EntriesApiResponse =
-  | { ok: true; calories: number }
-  | { ok: false; reason: "insufficient_detail" }
-  | { error: { code: string; message: string } };
-
-// Time the success confirmation stays visible before the dialog
-// auto-closes (Code Map: "success (shows returned calories, auto-closes)").
-const SUCCESS_CLOSE_DELAY_MS = 1200;
+import { useEntrySubmission } from "@/hooks/use-entry-submission";
 
 export function LogEntryDialog() {
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
   const [validationError, setValidationError] = useState(false);
-  const [message, setMessage] = useState<string | undefined>();
-  const [calories, setCalories] = useState<number | undefined>();
-  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  // A submission is only allowed to update state if it's still the most
-  // recent one by the time its response arrives — incremented on every new
-  // submit attempt and on close, so a stale in-flight request (abandoned by
-  // closing the dialog, or superseded by a second submission) can never
-  // clobber a later submission's state or silently "succeed" into a closed
-  // dialog. abortControllerRef additionally cancels the network request
-  // itself rather than just ignoring its result.
-  const requestIdRef = useRef(0);
-  const abortControllerRef = useRef<AbortController | undefined>(undefined);
+  const { status, message, calories, submit, cancelAndReset } = useEntrySubmission();
 
   function resetForNextOpen() {
     setDescription("");
-    setStatus("idle");
     setValidationError(false);
-    setMessage(undefined);
-    setCalories(undefined);
   }
 
   function handleOpenChange(next: boolean) {
     if (!next) {
-      requestIdRef.current += 1;
-      abortControllerRef.current?.abort();
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
-        closeTimeoutRef.current = undefined;
-      }
       // Closing (whichever way) always starts the next open from a clean
       // slate — the "keep my text editable" guarantee only applies while
       // this dialog stays open across a retry.
+      cancelAndReset();
       resetForNextOpen();
     }
     setOpen(next);
@@ -77,80 +43,12 @@ export function LogEntryDialog() {
 
     const trimmed = description.trim();
     if (trimmed.length === 0) {
-      setMessage(undefined);
-      setStatus("idle");
       setValidationError(true);
       return;
     }
-
-    // Supersede any still-in-flight prior submission before starting this
-    // one — its eventual response (if any arrives) is now stale and will
-    // be ignored below.
-    requestIdRef.current += 1;
-    const myRequestId = requestIdRef.current;
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
     setValidationError(false);
-    setMessage(undefined);
-    setStatus("submitting");
 
-    let response: Response;
-    try {
-      response = await fetch("/api/entries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ descriptionText: trimmed }),
-        signal: controller.signal,
-      });
-    } catch {
-      if (requestIdRef.current !== myRequestId) return;
-      setStatus("error");
-      setMessage("The attempt failed, try again.");
-      return;
-    }
-
-    if (requestIdRef.current !== myRequestId) return;
-
-    if (response.redirected) {
-      // Session expired mid-dialog — same handling as preferences-form.tsx.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.href = "/login";
-      return;
-    }
-
-    let result: EntriesApiResponse;
-    try {
-      result = await response.json();
-    } catch {
-      if (requestIdRef.current !== myRequestId) return;
-      setStatus("error");
-      setMessage("The attempt failed, try again.");
-      return;
-    }
-
-    if (requestIdRef.current !== myRequestId) return;
-
-    if (!response.ok || "error" in result) {
-      setStatus("error");
-      setMessage(
-        "error" in result ? result.error.message : "The attempt failed, try again."
-      );
-      return;
-    }
-
-    if (!result.ok) {
-      setStatus("insufficient_detail");
-      setMessage("Add a bit more detail and try again.");
-      return;
-    }
-
-    setStatus("success");
-    setCalories(result.calories);
-    closeTimeoutRef.current = setTimeout(() => {
-      handleOpenChange(false);
-    }, SUCCESS_CLOSE_DELAY_MS);
+    await submit({ descriptionText: trimmed }, () => handleOpenChange(false));
   }
 
   const submitting = status === "submitting";

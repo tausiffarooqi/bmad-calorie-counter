@@ -49,7 +49,7 @@ development_status:
 
   epic-2: in-progress
   2-1-log-a-meal-via-text: review
-  2-2-log-a-meal-via-photo: backlog
+  2-2-log-a-meal-via-photo: review
   2-3-in-progress-failure-states: backlog
   2-4-view-logged-entries: backlog
   2-5-accessible-in-progress-announcement: backlog

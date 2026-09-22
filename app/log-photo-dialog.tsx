@@ -1,0 +1,163 @@
+"use client";
+
+import { useRef, useState, type ChangeEvent } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { compressImage } from "@/lib/compress-image";
+import { useEntrySubmission } from "@/hooks/use-entry-submission";
+
+// "Add Photo" opens the native camera/file picker directly — no custom
+// in-app camera UI (Boundaries & Constraints). The status dialog below is
+// opened programmatically once a photo has been picked, not via a
+// DialogTrigger, since the picker itself is the entry point.
+export function LogPhotoDialog() {
+  const [open, setOpen] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const [rejection, setRejection] = useState<string | undefined>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { status, message, calories, submit, cancelAndReset } = useEntrySubmission();
+
+  // Guards the compression phase, which sits *before* useEntrySubmission's
+  // own requestId/AbortController machinery ever engages (that only covers
+  // the network leg). Bumped on every new pick and on close, so a stale
+  // compressImage() result — from a photo the user abandoned by closing the
+  // dialog, or superseded by picking a second photo before the first
+  // finished compressing — can never take any user-visible action (no
+  // phantom rejection message, and critically, no phantom submit()).
+  const pickIdRef = useRef(0);
+
+  function handleOpenChange(next: boolean) {
+    if (!next) {
+      pickIdRef.current += 1;
+      cancelAndReset();
+      setPreparing(false);
+      setRejection(undefined);
+    }
+    setOpen(next);
+  }
+
+  function openPicker() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Reset the input so re-picking the same file still fires a change
+    // event next time.
+    event.target.value = "";
+    if (!file) return;
+
+    const myPickId = (pickIdRef.current += 1);
+
+    setRejection(undefined);
+    setOpen(true);
+    setPreparing(true);
+
+    let compressed;
+    try {
+      compressed = await compressImage(file);
+    } catch {
+      if (pickIdRef.current !== myPickId) return;
+      setPreparing(false);
+      setRejection("Couldn't process that photo — try a different one.");
+      return;
+    }
+
+    if (pickIdRef.current !== myPickId) return;
+    setPreparing(false);
+
+    if (!compressed.ok) {
+      // Still too large after compression — no request sent (Boundaries &
+      // Constraints, I/O matrix).
+      setRejection("That photo is still too large — pick a smaller photo.");
+      return;
+    }
+
+    await submit(
+      { photoBase64: compressed.base64, photoMimeType: compressed.mimeType },
+      () => handleOpenChange(false)
+    );
+  }
+
+  const submitting = status === "submitting";
+  const busy = preparing || submitting;
+  const retryable = Boolean(rejection) || status === "insufficient_detail" || status === "error";
+
+  return (
+    <>
+      {/* Hidden native picker — visually hidden but still a real, focusable
+          file input isn't needed since the visible button below drives it;
+          it's excluded from the tab order and AT tree entirely. No
+          `capture` attribute: some mobile browsers treat `capture` as
+          camera-only, blocking the "pick an existing photo" path that
+          EXPERIENCE.md's IA explicitly calls for alongside camera capture.
+          `accept="image/*"` alone still opens the native chooser (camera or
+          gallery) on every mainstream mobile browser. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="sr-only"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+      <Button
+        variant="outline"
+        onClick={openPicker}
+        disabled={busy}
+        aria-describedby="photo-only-notice"
+      >
+        Add Photo
+      </Button>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Log a meal</DialogTitle>
+            <DialogDescription>
+              We&apos;ll estimate the calories from your photo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            {preparing && (
+              <p role="status" className="text-sm text-muted-foreground">
+                Preparing photo…
+              </p>
+            )}
+            {rejection && (
+              <p role="alert" className="text-sm text-primary">
+                {rejection}
+              </p>
+            )}
+            {submitting && (
+              <p role="status" className="text-sm text-muted-foreground">
+                Estimating…
+              </p>
+            )}
+            {status === "success" && calories !== undefined && (
+              <p role="status" className="text-sm text-foreground">
+                Logged — about {calories} calories.
+              </p>
+            )}
+            {(status === "insufficient_detail" || status === "error") && message && (
+              <p role="alert" className="text-sm text-primary">
+                {message}
+              </p>
+            )}
+            {retryable && (
+              <Button type="button" variant="outline" size="sm" className="self-start" onClick={openPicker}>
+                Try another photo
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
