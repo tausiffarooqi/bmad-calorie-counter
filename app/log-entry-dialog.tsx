@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { EntryStatusCard } from "@/components/entry-status-card";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -40,6 +41,13 @@ export function LogEntryDialog() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (status === "submitting") return;
+
+    // A new attempt supersedes any stale retry/error state from a previous
+    // one — without this, resubmitting blank text after an earlier
+    // insufficient-detail/error response left both the validation alert and
+    // the stale retry card rendered at once (two contradictory role="alert"
+    // regions).
+    cancelAndReset();
 
     const trimmed = description.trim();
     if (trimmed.length === 0) {
@@ -94,9 +102,9 @@ export function LogEntryDialog() {
             </p>
           )}
           {status === "submitting" && (
-            <p role="status" className="text-sm text-muted-foreground">
+            <EntryStatusCard variant="pending" role="status">
               Estimating…
-            </p>
+            </EntryStatusCard>
           )}
           {status === "success" && calories !== undefined && (
             <p id="meal-description-status" role="status" className="text-sm text-foreground">
@@ -104,9 +112,9 @@ export function LogEntryDialog() {
             </p>
           )}
           {(status === "insufficient_detail" || status === "error") && message && (
-            <p id="meal-description-status" role="alert" className="text-sm text-primary">
+            <EntryStatusCard variant="retry" role="alert" id="meal-description-status">
               {message}
-            </p>
+            </EntryStatusCard>
           )}
           <DialogFooter>
             <Button type="submit" disabled={submitting || status === "success"}>

@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { EntryStatusCard } from "@/components/entry-status-card";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,12 @@ export function LogPhotoDialog() {
 
     const myPickId = (pickIdRef.current += 1);
 
+    // A new pick supersedes any stale retry state from a previous one —
+    // without this, picking an oversized photo B after an earlier
+    // insufficient-detail/error result for photo A left both the new
+    // rejection message and the old retry card rendered at once (two
+    // contradictory role="alert" regions).
+    cancelAndReset();
     setRejection(undefined);
     setOpen(true);
     setPreparing(true);
@@ -126,19 +133,19 @@ export function LogPhotoDialog() {
           </DialogHeader>
           <div className="flex flex-col gap-2">
             {preparing && (
-              <p role="status" className="text-sm text-muted-foreground">
+              <EntryStatusCard variant="pending" role="status">
                 Preparing photo…
-              </p>
+              </EntryStatusCard>
             )}
             {rejection && (
-              <p role="alert" className="text-sm text-primary">
+              <EntryStatusCard variant="retry" role="alert" id="photo-status-message">
                 {rejection}
-              </p>
+              </EntryStatusCard>
             )}
             {submitting && (
-              <p role="status" className="text-sm text-muted-foreground">
+              <EntryStatusCard variant="pending" role="status">
                 Estimating…
-              </p>
+              </EntryStatusCard>
             )}
             {status === "success" && calories !== undefined && (
               <p role="status" className="text-sm text-foreground">
@@ -146,12 +153,19 @@ export function LogPhotoDialog() {
               </p>
             )}
             {(status === "insufficient_detail" || status === "error") && message && (
-              <p role="alert" className="text-sm text-primary">
+              <EntryStatusCard variant="retry" role="alert" id="photo-status-message">
                 {message}
-              </p>
+              </EntryStatusCard>
             )}
             {retryable && (
-              <Button type="button" variant="outline" size="sm" className="self-start" onClick={openPicker}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onClick={openPicker}
+                aria-describedby="photo-status-message"
+              >
                 Try another photo
               </Button>
             )}
