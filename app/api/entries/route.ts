@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createEntry, getEntriesForDay } from "@/lib/services/entries";
+import { classify } from "@/lib/services/entry-classifier";
 import { dayBoundary, isValidTimeZone } from "@/lib/services/day-boundary";
 import { GeminiAdapter } from "@/lib/estimation/gemini-adapter";
 import type { EstimationInput } from "@/lib/estimation/types";
@@ -17,8 +18,11 @@ const SUPPORTED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/we
 
 // Gemini's estimation call can run long — no client-side timeout, and the
 // in-progress UI holds for the full duration however long it takes
-// (AD-9, Boundaries & Constraints). Vercel's default is 10s; this raises
-// the ceiling to the max available on Hobby.
+// (AD-9, Boundaries & Constraints). Photo-mode Entries make a second,
+// sequential Gemini call after estimation (Story 3.1's classification path,
+// entry-classifier.ts), so this budget covers both calls together, not just
+// estimation. Vercel's default is 10s; this raises the ceiling to the max
+// available on Hobby.
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
@@ -173,8 +177,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: result.reason });
   }
 
+  // Classification runs as a downstream step right after a successful
+  // estimation, never inside the EstimationProvider adapter (AD-2, Story
+  // 3.1). A classifier failure (Gemini path, photo mode) returns the same
+  // error envelope as a createEntry() failure below — no entries row is
+  // written, and a classification is never guessed (I/O & Edge-Case
+  // Matrix) — but each stage logs its own distinct message so the two
+  // failure modes stay distinguishable server-side.
+  let classification;
   try {
-    await createEntry(user.id, inputMode, result.description, result.calories);
+    classification = await classify(result.description, inputMode);
+  } catch (error) {
+    console.error("Classification failed after successful estimation:", error);
+    return NextResponse.json(
+      {
+        error: {
+          code: "entry_creation_failed",
+          message: "The attempt failed, try again.",
+        },
+      },
+      { status: 500 }
+    );
+  }
+
+  try {
+    await createEntry(user.id, inputMode, result.description, result.calories, classification);
   } catch (error) {
     console.error("Failed to create entry after successful estimation:", error);
     return NextResponse.json(

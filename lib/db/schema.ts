@@ -16,9 +16,6 @@ export const profiles = pgTable("profiles", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// No `classification` column yet — Epic 3's Story 3.1 adds it via a
-// separate `ALTER TABLE` once classification logic exists (AD scope note,
-// Boundaries & Constraints).
 export const entries = pgTable(
   "entries",
   {
@@ -27,6 +24,11 @@ export const entries = pgTable(
       .notNull()
       .references(() => authUsers.id, { onDelete: "cascade" }),
     inputMode: text("input_mode").notNull(),
+    // Added by Story 3.1 via a separate `ALTER TABLE` (Epic 3's AD scope
+    // note) — every persisted Entry gets exactly one of `meal`/
+    // `snack_beverage`, never null (no `.default()` — AD-1 requires every
+    // caller of `createEntry()` to pass it explicitly).
+    classification: text("classification").notNull(),
     descriptionText: text("description_text").notNull(),
     calories: integer("calories").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

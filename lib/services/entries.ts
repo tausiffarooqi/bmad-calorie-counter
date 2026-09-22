@@ -1,15 +1,19 @@
 import { and, asc, eq, gte, lt } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { entries } from "@/lib/db/schema";
-import type { InputMode } from "@/lib/constants";
+import type { Classification, InputMode } from "@/lib/constants";
 
 // The only code path allowed to write `entries` (AD-1 layered architecture)
 // — never a direct DB call from a route handler or component.
+// `classification` is required (never defaulted here or in the schema) —
+// every caller must have already run it through
+// `lib/services/entry-classifier.ts`'s `classify()` (Story 3.1, AD-1).
 export async function createEntry(
   userId: string,
   inputMode: InputMode,
   descriptionText: string,
-  calories: number
+  calories: number,
+  classification: Classification
 ) {
   const [entry] = await db
     .insert(entries)
@@ -18,6 +22,7 @@ export async function createEntry(
       inputMode,
       descriptionText,
       calories,
+      classification,
     })
     .returning();
   return entry;
