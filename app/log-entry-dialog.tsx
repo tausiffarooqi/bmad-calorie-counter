@@ -16,7 +16,14 @@ import {
 import { MAX_DESCRIPTION_LENGTH } from "@/lib/constants";
 import { useEntrySubmission } from "@/hooks/use-entry-submission";
 
-export function LogEntryDialog() {
+interface LogEntryDialogProps {
+  // Called once a submission succeeds (after the dialog's own auto-close) —
+  // the host page uses this to refresh the Entries list (Story 2.4 Code
+  // Map).
+  onSuccess?: () => void;
+}
+
+export function LogEntryDialog({ onSuccess }: LogEntryDialogProps = {}) {
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [validationError, setValidationError] = useState(false);
@@ -56,7 +63,10 @@ export function LogEntryDialog() {
     }
     setValidationError(false);
 
-    await submit({ descriptionText: trimmed }, () => handleOpenChange(false));
+    await submit({ descriptionText: trimmed }, () => {
+      handleOpenChange(false);
+      onSuccess?.();
+    });
   }
 
   const submitting = status === "submitting";

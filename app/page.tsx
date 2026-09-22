@@ -1,13 +1,22 @@
+"use client";
+
+import { useState } from "react";
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LogEntryDialog } from "@/app/log-entry-dialog";
 import { LogPhotoDialog } from "@/app/log-photo-dialog";
+import { EntriesList } from "@/app/entries-list";
 
 // Temporary foundation showcase for Epic 0 (UX Foundation). Exercises the
 // Muted Earth Editorial tokens (Story 0.1) and the global focus-visible
 // ring (Story 0.2) so both can be visually verified before any real screen
 // is built. Replaced by the actual Daily view in Epic 3.
 export default function Home() {
+  // Bumped by either dialog's onSuccess so EntriesList refetches and shows
+  // a just-logged Entry without a page reload (Story 2.4 Code Map).
+  const [refreshKey, setRefreshKey] = useState(0);
+  const bumpRefreshKey = () => setRefreshKey((key) => key + 1);
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
       <Button asChild variant="ghost" size="icon" className="self-end">
@@ -17,9 +26,7 @@ export default function Home() {
       </Button>
       <p className="text-label uppercase text-muted-foreground">Design token foundation</p>
       <p className="font-sans text-display-number text-primary">1,240</p>
-      <div className="w-full max-w-sm rounded-md border border-border bg-card p-4">
-        <p className="text-sm text-foreground">Breakfast &middot; Oatmeal &amp; berries</p>
-      </div>
+      <EntriesList refreshKey={refreshKey} />
       <div className="w-full max-w-sm rounded-lg border border-accent bg-card p-4">
         <p className="font-[family-name:var(--font-recommendation)] text-recommendation italic text-foreground">
           &ldquo;Try a grilled paneer wrap with saut&eacute;ed greens.&rdquo;
@@ -27,8 +34,8 @@ export default function Home() {
       </div>
       <div className="flex flex-col items-center gap-1.5">
         <div className="flex gap-3">
-          <LogPhotoDialog />
-          <LogEntryDialog />
+          <LogPhotoDialog onSuccess={bumpRefreshKey} />
+          <LogEntryDialog onSuccess={bumpRefreshKey} />
         </div>
         {/* Persistent, non-dismissible notice (FR-21) — small print, no
             card/border treatment, never a dialog. Wired via aria-describedby

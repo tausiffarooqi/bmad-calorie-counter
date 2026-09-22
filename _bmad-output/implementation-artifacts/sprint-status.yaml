@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: 09-21-2026
+last_updated: 09-22-2026
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -51,7 +51,7 @@ development_status:
   2-1-log-a-meal-via-text: review
   2-2-log-a-meal-via-photo: review
   2-3-in-progress-failure-states: review
-  2-4-view-logged-entries: backlog
+  2-4-view-logged-entries: review
   2-5-accessible-in-progress-announcement: backlog
   epic-2-retrospective: optional
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createEntry } from "@/lib/services/entries";
+import { createEntry, getEntriesForDay } from "@/lib/services/entries";
+import { dayBoundary, isValidTimeZone } from "@/lib/services/day-boundary";
 import { GeminiAdapter } from "@/lib/estimation/gemini-adapter";
 import type { EstimationInput } from "@/lib/estimation/types";
 import { MAX_DESCRIPTION_LENGTH, type InputMode } from "@/lib/constants";
@@ -188,4 +189,76 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ ok: true, calories: result.calories });
+}
+
+// Returns the signed-in user's Entries for "today" — the 5am-to-next-5am
+// local Day the caller's browser is currently in (AD-5). Reads go through
+// `lib/services/entries.ts` alongside `createEntry` — still the sole code
+// path touching `entries` (AD-1).
+export async function GET(request: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // 401 if absent, matching POST's pattern (Code Map).
+  if (!user) {
+    return NextResponse.json(
+      { error: { code: "unauthenticated", message: "You must be logged in." } },
+      { status: 401 }
+    );
+  }
+
+  const tz = new URL(request.url).searchParams.get("tz");
+  if (!tz || !isValidTimeZone(tz)) {
+    // Logged (the client also now surfaces a distinct load-error state —
+    // see entries-list.tsx) so a systematic tz-validation failure (e.g. a
+    // client/server ICU version mismatch on an IANA zone one side
+    // recognizes and the other doesn't) is diagnosable server-side rather
+    // than only visible as an unexplained user-facing error.
+    console.error("Rejected GET /api/entries: invalid tz query param:", tz);
+    return NextResponse.json(
+      {
+        error: {
+          code: "invalid_input",
+          message: "A valid tz query parameter is required.",
+        },
+      },
+      { status: 400 }
+    );
+  }
+
+  // Timezone is client-detected and sent per-request, never stored (FR-14's
+  // "no manual override" consequence — nothing to persist, Boundaries &
+  // Constraints) — "today" is always computed fresh, from the server's own
+  // current time, not a client-supplied timestamp. Wrapped in the same
+  // try/catch as the DB read below — every fallible call in this handler
+  // returns the app's `{ error: { code, message } }` envelope, never an
+  // unhandled exception.
+  let rows;
+  try {
+    const { start, end } = dayBoundary(new Date(), tz);
+    rows = await getEntriesForDay(user.id, start, end);
+  } catch (error) {
+    console.error("Failed to load today's entries:", error);
+    return NextResponse.json(
+      {
+        error: {
+          code: "entries_fetch_failed",
+          message: "Couldn't load your entries — try again.",
+        },
+      },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    entries: rows.map((row) => ({
+      id: row.id,
+      description: row.descriptionText,
+      calories: row.calories,
+      inputMode: row.inputMode,
+      createdAt: row.createdAt,
+    })),
+  });
 }

@@ -17,7 +17,14 @@ import { useEntrySubmission } from "@/hooks/use-entry-submission";
 // in-app camera UI (Boundaries & Constraints). The status dialog below is
 // opened programmatically once a photo has been picked, not via a
 // DialogTrigger, since the picker itself is the entry point.
-export function LogPhotoDialog() {
+interface LogPhotoDialogProps {
+  // Called once a submission succeeds (after the dialog's own auto-close) —
+  // the host page uses this to refresh the Entries list (Story 2.4 Code
+  // Map).
+  onSuccess?: () => void;
+}
+
+export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
   const [open, setOpen] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [rejection, setRejection] = useState<string | undefined>();
@@ -88,7 +95,10 @@ export function LogPhotoDialog() {
 
     await submit(
       { photoBase64: compressed.base64, photoMimeType: compressed.mimeType },
-      () => handleOpenChange(false)
+      () => {
+        handleOpenChange(false);
+        onSuccess?.();
+      }
     );
   }
 
