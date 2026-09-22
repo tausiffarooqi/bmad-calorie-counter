@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { EntryStatusCard } from "@/components/entry-status-card";
+import { LiveRegion } from "@/components/live-region";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -72,6 +73,20 @@ export function LogEntryDialog({ onSuccess }: LogEntryDialogProps = {}) {
   const submitting = status === "submitting";
   const textareaDisabled = submitting || status === "success";
 
+  // Mirrors only the pending/success text — role="status" content, which
+  // (unlike role="alert") is commonly missed by screen readers when it
+  // arrives on a freshly-mounted node. The insufficient-detail/error
+  // messages and the blank-field validation message already use
+  // role="alert", which AT reliably announces on insertion without this
+  // mechanism (the same reason the validation message below has never
+  // needed one) — mirroring that text here too would risk a double
+  // announcement or an assertive/polite race against the identical string.
+  const announcement = submitting
+    ? "Estimating…"
+    : status === "success" && calories !== undefined
+      ? `Logged — about ${calories} calories.`
+      : "";
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -126,6 +141,7 @@ export function LogEntryDialog({ onSuccess }: LogEntryDialogProps = {}) {
               {message}
             </EntryStatusCard>
           )}
+          <LiveRegion message={announcement} />
           <DialogFooter>
             <Button type="submit" disabled={submitting || status === "success"}>
               {submitting ? "Estimating…" : "Log meal"}

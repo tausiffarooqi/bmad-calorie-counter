@@ -3,6 +3,7 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { EntryStatusCard } from "@/components/entry-status-card";
+import { LiveRegion } from "@/components/live-region";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +72,15 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
     cancelAndReset();
     setRejection(undefined);
     setOpen(true);
+
+    // Yield a tick before setting `preparing` so this dialog's first-ever
+    // open commits with LiveRegion mounted empty, then mutates to
+    // "Preparing photo…" as a separate React commit — batching both state
+    // updates into one commit (as a bare synchronous setOpen+setPreparing
+    // would) reproduces the exact freshly-mounted-with-text-already-set bug
+    // this story exists to fix (review finding, first-pick timing).
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    if (pickIdRef.current !== myPickId) return;
     setPreparing(true);
 
     let compressed;
@@ -105,6 +115,21 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
   const submitting = status === "submitting";
   const busy = preparing || submitting;
   const retryable = Boolean(rejection) || status === "insufficient_detail" || status === "error";
+
+  // Mirrors only the pending/success text — role="status" content, which
+  // (unlike role="alert") is commonly missed by screen readers when it
+  // arrives on a freshly-mounted node. The rejection/insufficient-detail/
+  // error messages already use role="alert", which AT reliably announces
+  // on insertion without this mechanism — mirroring that text here too
+  // would risk a double announcement or an assertive/polite race against
+  // the identical string.
+  const announcement = preparing
+    ? "Preparing photo…"
+    : submitting
+      ? "Estimating…"
+      : status === "success" && calories !== undefined
+        ? `Logged — about ${calories} calories.`
+        : "";
 
   return (
     <>
@@ -179,6 +204,7 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
                 Try another photo
               </Button>
             )}
+            <LiveRegion message={announcement} />
           </div>
         </DialogContent>
       </Dialog>

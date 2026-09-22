@@ -47,12 +47,12 @@ development_status:
   1-4-accessible-navigation-to-preferences: review
   epic-1-retrospective: optional
 
-  epic-2: in-progress
-  2-1-log-a-meal-via-text: review
-  2-2-log-a-meal-via-photo: review
-  2-3-in-progress-failure-states: review
-  2-4-view-logged-entries: review
-  2-5-accessible-in-progress-announcement: backlog
+  epic-2: done
+  2-1-log-a-meal-via-text: done
+  2-2-log-a-meal-via-photo: done
+  2-3-in-progress-failure-states: done
+  2-4-view-logged-entries: done
+  2-5-accessible-in-progress-announcement: done
   epic-2-retrospective: optional
 
   epic-3: backlog
