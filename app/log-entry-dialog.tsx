@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { MAX_DESCRIPTION_LENGTH } from "@/lib/constants";
+import { getClientTimeZone } from "@/lib/get-client-timezone";
 import { useEntrySubmission } from "@/hooks/use-entry-submission";
 
 interface LogEntryDialogProps {
@@ -64,7 +65,7 @@ export function LogEntryDialog({ onSuccess }: LogEntryDialogProps = {}) {
     }
     setValidationError(false);
 
-    await submit({ descriptionText: trimmed }, () => {
+    await submit({ descriptionText: trimmed, tz: getClientTimeZone() }, () => {
       handleOpenChange(false);
       onSuccess?.();
     });

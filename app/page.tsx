@@ -21,7 +21,8 @@ export default function Home() {
   // Single shared fetch (Story 3.2) feeding both the Remaining Calorie
   // Budget number and the Entries list below it — same `GET /api/entries`
   // call, same day-scoped read, no second fetch for the same data.
-  const { entries, remainingBudget, loadError } = useDailyView(refreshKey);
+  // `recommendations` (Story 3.3) rides along on the same fetch.
+  const { entries, remainingBudget, recommendations, loadError } = useDailyView(refreshKey);
 
   // The first fetch hasn't resolved (success or failure) yet — EXPERIENCE.md's
   // Cold-load State Pattern: a brief skeleton matching the eventual layout
@@ -65,11 +66,29 @@ export default function Home() {
       ) : (
         <EntriesList entries={entries} loadError={loadError} />
       )}
-      <div className="w-full max-w-sm rounded-lg border border-accent bg-card p-4">
-        <p className="font-[family-name:var(--font-recommendation)] text-recommendation italic text-foreground">
-          &ldquo;Try a grilled paneer wrap with saut&eacute;ed greens.&rdquo;
-        </p>
-      </div>
+      {/* 0-2 real, data-driven Recommendation cards (Story 3.3) — one per
+          still-open Meal Slot, lunch then dinner, replacing the old
+          hardcoded single-card placeholder. Renders nothing at all when no
+          Meal Slots remain (I/O & Edge-Case Matrix: "All expected slots
+          filled ... [] - no cards"), never an empty-state placeholder.
+          Gated on `!loadError`, mirroring `budgetReady`'s guard above — a
+          failed refetch after a previously-successful load must never leave
+          stale Recommendation cards on screen with no error indication. */}
+      {!loadError && recommendations.map((recommendation) => (
+        <div
+          key={recommendation.slot}
+          className="w-full max-w-sm rounded-lg border border-accent bg-card p-4"
+        >
+          {/* Eyebrow "{Slot} Recommendation" in sage/accent styling, per
+              mockups/daily-view.html's `.rec-eyebrow`. */}
+          <p className="text-label uppercase text-accent">
+            {recommendation.slot} Recommendation
+          </p>
+          <p className="font-[family-name:var(--font-recommendation)] text-recommendation italic text-foreground">
+            &ldquo;{recommendation.text}&rdquo;
+          </p>
+        </div>
+      ))}
       <div className="flex flex-col items-center gap-1.5">
         <div className="flex gap-3">
           <LogPhotoDialog onSuccess={bumpRefreshKey} />

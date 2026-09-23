@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { compressImage } from "@/lib/compress-image";
+import { getClientTimeZone } from "@/lib/get-client-timezone";
 import { useEntrySubmission } from "@/hooks/use-entry-submission";
 
 // "Add Photo" opens the native camera/file picker directly — no custom
@@ -104,7 +105,11 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
     }
 
     await submit(
-      { photoBase64: compressed.base64, photoMimeType: compressed.mimeType },
+      {
+        photoBase64: compressed.base64,
+        photoMimeType: compressed.mimeType,
+        tz: getClientTimeZone(),
+      },
       () => {
         handleOpenChange(false);
         onSuccess?.();

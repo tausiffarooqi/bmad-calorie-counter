@@ -5,10 +5,43 @@ import { classify } from "@/lib/services/entry-classifier";
 import { dayBoundary, isValidTimeZone } from "@/lib/services/day-boundary";
 import { getProfile } from "@/lib/services/profiles";
 import { computeRemainingBudget } from "@/lib/services/budget-engine";
+import { getRecommendations } from "@/lib/services/recommendation-engine";
 import { GeminiAdapter } from "@/lib/estimation/gemini-adapter";
 import type { EstimationInput } from "@/lib/estimation/types";
-import { MAX_DESCRIPTION_LENGTH, type InputMode } from "@/lib/constants";
+import {
+  MAX_DESCRIPTION_LENGTH,
+  type Classification,
+  type DietaryPreference,
+  type InputMode,
+} from "@/lib/constants";
 import { MAX_PHOTO_BYTES } from "@/lib/compress-image";
+
+// `profiles.dietary_preference` is a plain `text` column (schema.ts), not a
+// DB-level enum — every write path already validates against
+// DIETARY_PREFERENCES before it lands (preferences route, registration's
+// DB default), so this narrows the read side the same way
+// preferences/preferences-form.tsx already does for its own untrusted-string
+// prop, rather than trusting the column's static type. `profiles.dietary_
+// preference` always resolves (defaults to `non_vegetarian`, Story 1.1) —
+// this never hits an undefined case (Boundaries & Constraints).
+function toDietaryPreference(value: string): DietaryPreference {
+  return value === "vegetarian" ? "vegetarian" : "non_vegetarian";
+}
+
+// `entries.classification` is likewise a plain `text` column — narrowed the
+// same explicit, defensive way as toDietaryPreference() above, for
+// getRecommendations()'s input. Every write path (createEntry(), called
+// only with entry-classifier.ts's Classification output — AD-1) already
+// guarantees only "meal"/"snack_beverage" ever lands there, so this is a
+// type-level narrowing of an already-guaranteed value, not new runtime
+// validation.
+function toRecommendationEntries(
+  rows: { classification: string }[]
+): { classification: Classification }[] {
+  return rows.map((row) => ({
+    classification: row.classification === "meal" ? "meal" : "snack_beverage",
+  }));
+}
 
 // The client (lib/compress-image.ts) only ever produces "image/jpeg" — this
 // is the actual server-side enforcement point (a client is not a trusted
@@ -32,6 +65,7 @@ export async function POST(request: Request) {
     descriptionText?: unknown;
     photoBase64?: unknown;
     photoMimeType?: unknown;
+    tz?: unknown;
   };
   try {
     body = await request.json();
@@ -51,6 +85,19 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: { code: "unauthenticated", message: "You must be logged in." } },
       { status: 401 }
+    );
+  }
+
+  // New in this story (Code Map: "mirroring GET's query param") — needed to
+  // compute this response's remainingBudget/recommendations (FR-9) against
+  // the correct local day/hour. Validated up front, before the Gemini call,
+  // the same 400 pattern as the XOR check right below (I/O & Edge-Case
+  // Matrix: "missing/invalid tz ... 400, same error shape").
+  const tz = body.tz;
+  if (typeof tz !== "string" || !isValidTimeZone(tz)) {
+    return NextResponse.json(
+      { error: { code: "invalid_input", message: "A valid tz field is required." } },
+      { status: 400 }
     );
   }
 
@@ -217,7 +264,65 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ ok: true, calories: result.calories });
+  // FR-9's response contract: every successful submission returns the
+  // estimated calories, the updated Remaining Calorie Budget, and one
+  // Recommendation per remaining Meal Slot, all together — never just the
+  // calories alone. Re-fetches today's Entries + profile fresh (a second
+  // read, not the pre-submission `rows`/`profile` from anywhere else in
+  // this handler — there isn't one, since POST never fetched them before
+  // now) so the just-created Entry above is itself included in both the
+  // budget subtraction and the filled-slot count (Code Map).
+  //
+  // The Entry itself is already durably created above by this point — a
+  // failure in this follow-up read/compute step must never be reported as
+  // an `entry_creation_failed` error, since that message tells the user to
+  // retry and a retry would create a duplicate Entry. Instead this falls
+  // back to the pre-Story-3.3 success shape (`{ ok: true, calories }`,
+  // omitting remainingBudget/recommendations) — still a genuine success
+  // response, just without the enrichment this story adds.
+  const now = new Date();
+  let remainingBudget: number | undefined;
+  let recommendations: ReturnType<typeof getRecommendations> | undefined;
+  try {
+    const { start, end } = dayBoundary(now, tz);
+    const [freshRows, freshProfile] = await Promise.all([
+      getEntriesForDay(user.id, start, end),
+      getProfile(user.id),
+    ]);
+
+    // Mirrors GET's identical guard — a missing profile row for an
+    // authenticated user indicates data corruption, not a normal state
+    // (Code Map / Boundaries & Constraints).
+    if (!freshProfile) {
+      console.error(`No profile found for authenticated user ${user.id}`);
+    } else {
+      remainingBudget = computeRemainingBudget(freshProfile.dailyCalorieTarget, freshRows);
+      recommendations = getRecommendations(
+        now,
+        tz,
+        toRecommendationEntries(freshRows),
+        toDietaryPreference(freshProfile.dietaryPreference)
+      );
+    }
+  } catch (error) {
+    // Logged with its own distinct message so it's not confused with the
+    // createEntry() failure above.
+    console.error(
+      "Failed to compute post-submission remainingBudget/recommendations:",
+      error
+    );
+  }
+
+  if (remainingBudget === undefined || recommendations === undefined) {
+    return NextResponse.json({ ok: true, calories: result.calories });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    calories: result.calories,
+    remainingBudget,
+    recommendations,
+  });
 }
 
 // Returns the signed-in user's Entries for "today" — the 5am-to-next-5am
@@ -275,10 +380,12 @@ export async function GET(request: Request) {
       { status: 500 }
     );
 
+  const now = new Date();
+
   let rows;
   let profile;
   try {
-    const { start, end } = dayBoundary(new Date(), tz);
+    const { start, end } = dayBoundary(now, tz);
     // Independent lookups against different tables (`entries`/`profiles`),
     // run concurrently — no second DB query against `entries` (Code Map),
     // just the one extra `profiles` lookup needed to compute
@@ -316,6 +423,26 @@ export async function GET(request: Request) {
   // when negative (Over-Target, Story 3.5's concern to detect/style).
   const remainingBudget = computeRemainingBudget(profile.dailyCalorieTarget, rows);
 
+  // Same `rows`/`profile` this handler already fetched above — no second
+  // `entries` query (Code Map: "using the already-fetched rows/profile").
+  // Wrapped in its own try/catch, same as every other fallible call in this
+  // handler (getRecommendations() is pure/sync and shouldn't throw given
+  // valid inputs, but this keeps the handler's own stated invariant true
+  // regardless — "every fallible call ... returns the app's envelope,
+  // never an unhandled exception").
+  let recommendations: ReturnType<typeof getRecommendations>;
+  try {
+    recommendations = getRecommendations(
+      now,
+      tz,
+      toRecommendationEntries(rows),
+      toDietaryPreference(profile.dietaryPreference)
+    );
+  } catch (error) {
+    console.error("Failed to compute recommendations:", error);
+    return entriesFetchFailedResponse();
+  }
+
   return NextResponse.json({
     entries: rows.map((row) => ({
       id: row.id,
@@ -325,5 +452,6 @@ export async function GET(request: Request) {
       createdAt: row.createdAt,
     })),
     remainingBudget,
+    recommendations,
   });
 }

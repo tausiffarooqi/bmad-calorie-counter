@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getClientTimeZone } from "@/lib/get-client-timezone";
+import type { Recommendation } from "@/lib/services/recommendation-engine";
 
 export interface Entry {
   id: string;
@@ -13,6 +15,7 @@ export interface Entry {
 interface EntriesApiResponse {
   entries?: Entry[];
   remainingBudget?: number;
+  recommendations?: Recommendation[];
 }
 
 // Shared fetch for the Daily view — one call to `GET /api/entries` feeding
@@ -27,6 +30,7 @@ interface EntriesApiResponse {
 export function useDailyView(refreshKey: number) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [remainingBudget, setRemainingBudget] = useState<number | undefined>(undefined);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -35,7 +39,7 @@ export function useDailyView(refreshKey: number) {
     async function load() {
       // Client-detected, sent per-request, never stored (FR-14 — Boundaries
       // & Constraints).
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const tz = getClientTimeZone();
 
       let response: Response;
       try {
@@ -73,6 +77,7 @@ export function useDailyView(refreshKey: number) {
       setLoadError(false);
       setEntries(result.entries ?? []);
       setRemainingBudget(result.remainingBudget);
+      setRecommendations(result.recommendations ?? []);
     }
 
     load();
@@ -82,5 +87,5 @@ export function useDailyView(refreshKey: number) {
     };
   }, [refreshKey]);
 
-  return { entries, remainingBudget, loadError };
+  return { entries, remainingBudget, recommendations, loadError };
 }
