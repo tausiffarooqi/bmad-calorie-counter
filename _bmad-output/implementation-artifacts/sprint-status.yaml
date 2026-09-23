@@ -57,7 +57,7 @@ development_status:
 
   epic-3: in-progress
   3-1-classify-entries-as-meal-or-snack-beverage: review
-  3-2-compute-remaining-calorie-budget: backlog
+  3-2-compute-remaining-calorie-budget: review
   3-3-meal-slot-recommendations-by-time-of-day: backlog
   3-4-after-10pm-conditional-recommendation: backlog
   3-5-over-target-override: backlog

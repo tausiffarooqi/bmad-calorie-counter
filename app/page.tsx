@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogEntryDialog } from "@/app/log-entry-dialog";
 import { LogPhotoDialog } from "@/app/log-photo-dialog";
 import { EntriesList } from "@/app/entries-list";
+import { useDailyView } from "@/hooks/use-daily-view";
 
 // Temporary foundation showcase for Epic 0 (UX Foundation). Exercises the
 // Muted Earth Editorial tokens (Story 0.1) and the global focus-visible
@@ -17,6 +18,23 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
   const bumpRefreshKey = () => setRefreshKey((key) => key + 1);
 
+  // Single shared fetch (Story 3.2) feeding both the Remaining Calorie
+  // Budget number and the Entries list below it — same `GET /api/entries`
+  // call, same day-scoped read, no second fetch for the same data.
+  const { entries, remainingBudget, loadError } = useDailyView(refreshKey);
+
+  // The first fetch hasn't resolved (success or failure) yet — EXPERIENCE.md's
+  // Cold-load State Pattern: a brief skeleton matching the eventual layout
+  // (budget number, entries container), resolving the instant real data
+  // arrives, never a separate loading screen.
+  const firstLoadPending = remainingBudget === undefined && !loadError;
+
+  // A valid, current budget value to actually render — false both before
+  // the first resolution *and* whenever the latest fetch failed, so a
+  // failed refetch after a previously-successful load never leaves the old,
+  // now-stale number on screen with no error indication.
+  const budgetReady = remainingBudget !== undefined && !loadError;
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
       <Button asChild variant="ghost" size="icon" className="self-end">
@@ -24,9 +42,29 @@ export default function Home() {
           <Settings />
         </a>
       </Button>
-      <p className="text-label uppercase text-muted-foreground">Design token foundation</p>
-      <p className="font-sans text-display-number text-primary">1,240</p>
-      <EntriesList refreshKey={refreshKey} />
+      <p className="text-label uppercase text-muted-foreground">Remaining calories today</p>
+      {/* Remaining Calorie Budget — the Daily view's single large numeric
+          focal point (`display-number` role). Real, live value from
+          useDailyView() (Story 3.2), replacing the old hardcoded "1,240"
+          placeholder. Unclamped — can render negative (Over-Target), never
+          rounded to zero (Boundaries & Constraints). Falls back to the same
+          skeleton placeholder as the cold-load case (never the stale prior
+          value) whenever the latest fetch failed. */}
+      {budgetReady ? (
+        <p className="font-sans text-display-number text-primary">
+          {remainingBudget.toLocaleString()}
+        </p>
+      ) : (
+        <div aria-hidden="true" className="h-[52px] w-32 animate-pulse rounded-md bg-muted" />
+      )}
+      {firstLoadPending ? (
+        <div
+          aria-hidden="true"
+          className="h-20 w-full max-w-sm animate-pulse rounded-md bg-muted"
+        />
+      ) : (
+        <EntriesList entries={entries} loadError={loadError} />
+      )}
       <div className="w-full max-w-sm rounded-lg border border-accent bg-card p-4">
         <p className="font-[family-name:var(--font-recommendation)] text-recommendation italic text-foreground">
           &ldquo;Try a grilled paneer wrap with saut&eacute;ed greens.&rdquo;

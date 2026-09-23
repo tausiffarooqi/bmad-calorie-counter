@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createEntry, getEntriesForDay } from "@/lib/services/entries";
 import { classify } from "@/lib/services/entry-classifier";
 import { dayBoundary, isValidTimeZone } from "@/lib/services/day-boundary";
+import { getProfile } from "@/lib/services/profiles";
+import { computeRemainingBudget } from "@/lib/services/budget-engine";
 import { GeminiAdapter } from "@/lib/estimation/gemini-adapter";
 import type { EstimationInput } from "@/lib/estimation/types";
 import { MAX_DESCRIPTION_LENGTH, type InputMode } from "@/lib/constants";
@@ -262,13 +264,8 @@ export async function GET(request: Request) {
   // try/catch as the DB read below — every fallible call in this handler
   // returns the app's `{ error: { code, message } }` envelope, never an
   // unhandled exception.
-  let rows;
-  try {
-    const { start, end } = dayBoundary(new Date(), tz);
-    rows = await getEntriesForDay(user.id, start, end);
-  } catch (error) {
-    console.error("Failed to load today's entries:", error);
-    return NextResponse.json(
+  const entriesFetchFailedResponse = () =>
+    NextResponse.json(
       {
         error: {
           code: "entries_fetch_failed",
@@ -277,7 +274,47 @@ export async function GET(request: Request) {
       },
       { status: 500 }
     );
+
+  let rows;
+  let profile;
+  try {
+    const { start, end } = dayBoundary(new Date(), tz);
+    // Independent lookups against different tables (`entries`/`profiles`),
+    // run concurrently — no second DB query against `entries` (Code Map),
+    // just the one extra `profiles` lookup needed to compute
+    // `remainingBudget` alongside it. Each has its own `.catch()` so a
+    // failure is attributed to its actual source in the logs rather than
+    // folded into one generic message (mirrors POST's classify-vs-
+    // createEntry distinct-logging split, Story 3.1).
+    [rows, profile] = await Promise.all([
+      getEntriesForDay(user.id, start, end).catch((error) => {
+        console.error("Failed to load today's entries:", error);
+        throw error;
+      }),
+      getProfile(user.id).catch((error) => {
+        console.error("Failed to load profile for remaining-budget computation:", error);
+        throw error;
+      }),
+    ]);
+  } catch {
+    return entriesFetchFailedResponse();
   }
+
+  // profiles.user_id is created at registration (Story 1.1) and never
+  // deleted independently, so a missing row here would indicate data
+  // corruption rather than a normal state to design around (mirrors
+  // preferences/page.tsx's identical guard) — logged with its own distinct
+  // message rather than folded into either query-failure catch above.
+  if (!profile) {
+    console.error(`No profile found for authenticated user ${user.id}`);
+    return entriesFetchFailedResponse();
+  }
+
+  // `computeRemainingBudget()` is the single place this subtraction
+  // happens (budget-engine.ts) — both Meal and Snack/Beverage Entries
+  // count identically (FR-8), and the result is returned unclamped, even
+  // when negative (Over-Target, Story 3.5's concern to detect/style).
+  const remainingBudget = computeRemainingBudget(profile.dailyCalorieTarget, rows);
 
   return NextResponse.json({
     entries: rows.map((row) => ({
@@ -287,5 +324,6 @@ export async function GET(request: Request) {
       inputMode: row.inputMode,
       createdAt: row.createdAt,
     })),
+    remainingBudget,
   });
 }

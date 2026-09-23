@@ -1,20 +1,8 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
-interface Entry {
-  id: string;
-  description: string;
-  calories: number;
-  inputMode: string;
-  createdAt: string;
-}
+import type { Entry } from "@/hooks/use-daily-view";
 
 interface EntriesListProps {
-  // Bumped by the host page whenever either logging dialog's `onSuccess`
-  // fires, so a just-logged Entry shows up without a page reload (Code Map,
-  // I/O matrix).
-  refreshKey: number;
+  entries: Entry[];
+  loadError: boolean;
 }
 
 // Renders today's Entries as one bordered container of rows — never
@@ -28,62 +16,12 @@ interface EntriesListProps {
 // (and, since it replaces rather than joins the list render, a refresh
 // that fails after a successful log never leaves a stale list looking
 // authoritative).
-export function EntriesList({ refreshKey }: EntriesListProps) {
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [loadError, setLoadError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      // Client-detected, sent per-request, never stored (FR-14 — Boundaries
-      // & Constraints).
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-      let response: Response;
-      try {
-        response = await fetch(`/api/entries?tz=${encodeURIComponent(tz)}`);
-      } catch {
-        if (!cancelled) setLoadError(true);
-        return;
-      }
-      if (cancelled) return;
-
-      if (response.redirected) {
-        // Session expired while this list was mounted — same handling as
-        // the logging dialogs' POST flow (hooks/use-entry-submission.ts):
-        // proxy.ts's own redirect on an expired session, followed
-        // transparently by fetch(), lands here rather than a JSON body.
-        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-        window.location.href = "/login";
-        return;
-      }
-
-      if (!response.ok) {
-        setLoadError(true);
-        return;
-      }
-
-      let result: { entries?: Entry[] };
-      try {
-        result = await response.json();
-      } catch {
-        if (!cancelled) setLoadError(true);
-        return;
-      }
-      if (cancelled) return;
-
-      setLoadError(false);
-      setEntries(result.entries ?? []);
-    }
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
-
+//
+// Purely presentational (Story 3.2) — the fetch that produces `entries`/
+// `loadError` now lives in the shared `useDailyView()` hook
+// (hooks/use-daily-view.ts), alongside the Remaining Calorie Budget fetch,
+// rather than duplicated here.
+export function EntriesList({ entries, loadError }: EntriesListProps) {
   if (loadError) {
     return (
       <p role="alert" className="text-sm text-primary">
