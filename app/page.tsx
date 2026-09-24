@@ -36,6 +36,13 @@ export default function Home() {
   // now-stale number on screen with no error indication.
   const budgetReady = remainingBudget !== undefined && !loadError;
 
+  // Over-Target State (Story 3.5) — derived client-side from the same
+  // `remainingBudget` sign the API already returns, no new response field.
+  // Strictly negative only ("exceeding," not "meeting exactly" — that's
+  // Story 3.4's unchanged "done for the day" case). Mutually exclusive with
+  // the Recommendation cards below: exactly one of the two ever renders.
+  const isOverTarget = remainingBudget !== undefined && remainingBudget < 0;
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
       <Button asChild variant="ghost" size="icon" className="self-end">
@@ -74,7 +81,28 @@ export default function Home() {
           Gated on `!loadError`, mirroring `budgetReady`'s guard above — a
           failed refetch after a previously-successful load must never leave
           stale Recommendation cards on screen with no error indication. */}
-      {!loadError && recommendations.map((recommendation) => (
+      {/* Over-Target banner (Story 3.5) — replaces every Recommendation
+          card at once, whenever `remainingBudget < 0`, at any time of day;
+          never rendered together with a Recommendation card (mutually
+          exclusive with the `!isOverTarget` branch below). Same clay/
+          `primary` tone as the budget number and primary actions — never
+          shadcn's `destructive`/red (DESIGN.md, FR-18) — per the
+          "supportive, never shaming" rule. Gated on `!loadError` the same
+          way Recommendation cards already are, so a failed refetch after a
+          prior over-target load never leaves a stale banner on screen. */}
+      {!loadError && isOverTarget && (
+        <div className="w-full max-w-sm rounded-md border border-primary bg-card p-4">
+          {/* Plain body text (no `{typography.recommendation}`/italic Lora —
+              DESIGN.md reserves that role for the Recommendation card only;
+              the Over-Target banner's own component entry specifies just
+              background/border/foreground/radius). */}
+          <p className="text-sm text-primary">
+            {Math.abs(remainingBudget).toLocaleString()} calories over target today. No
+            recommendation for now — tomorrow&apos;s a fresh start.
+          </p>
+        </div>
+      )}
+      {!loadError && !isOverTarget && recommendations.map((recommendation) => (
         <div
           key={recommendation.slot}
           className="w-full max-w-sm rounded-lg border border-accent bg-card p-4"

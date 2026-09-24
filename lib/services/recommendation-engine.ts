@@ -78,8 +78,9 @@ function expectedSlotsForHour(hour: number, remainingBudget: number): readonly M
   // hour >= 22 || hour < 5 — the after-10pm/before-5am range, one continuous
   // window spanning midnight (still the same Day, AD-5). One dinner slot if
   // the Daily Calorie Target hasn't been met yet, zero if it has (met
-  // exactly or over — Story 3.5's Over-Target banner is a separate layer on
-  // top, not this story's concern).
+  // exactly — the negative/over-target case never reaches this line, since
+  // getRecommendations()'s leading Story 3.5 guard already short-circuits
+  // any `remainingBudget < 0` before this function is called).
   return remainingBudget > 0 ? ["dinner"] : [];
 }
 
@@ -100,6 +101,19 @@ export function getRecommendations(
   dietaryPreference: DietaryPreference,
   remainingBudget: number
 ): Recommendation[] {
+  // Over-Target State (Story 3.5, AD-6) — strictly negative `remainingBudget`
+  // short-circuits to zero Recommendations, before any time-of-day window
+  // logic runs, at any hour. Takes precedence over every window below
+  // (including the after-10pm rule) without exception; `=== 0` ("met
+  // exactly") is deliberately excluded here and still falls through to the
+  // window logic (Story 3.4's own, unchanged, distinct "done for the day"
+  // behavior). The Daily view (app/page.tsx) renders the Over-Target banner
+  // instead, derived client-side from this same `remainingBudget` sign — no
+  // new field on this function's return shape.
+  if (remainingBudget < 0) {
+    return [];
+  }
+
   const expectedSlots = expectedSlotsForHour(getLocalHour(now, tz), remainingBudget);
 
   // Filled-slot count = Meal-classified Entries logged today only —

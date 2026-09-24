@@ -234,6 +234,68 @@ test("lunch/vegetarian has the expected exact copy", () => {
   );
 });
 
+// I/O & Edge-Case Matrix (Story 3.5): "Over target, morning window ... Local
+// hour 8, remainingBudget = -50 ... getRecommendations() returns []" —
+// overrides the 5am-12pm window that would otherwise return
+// [lunch, dinner].
+test("over target during the morning window returns no recommendations", () => {
+  const now = new Date("2026-01-15T08:00:00Z"); // 08:00 UTC
+  const result = getRecommendations(now, TZ, [], "non_vegetarian", -50);
+  assert.deepEqual(result, []);
+});
+
+// I/O & Edge-Case Matrix (Story 3.5): "Over target, midday window ... Local
+// hour 15, remainingBudget = -180 ... [] — overriding the 12pm-10pm window
+// that would otherwise show a dinner card".
+test("over target during the midday window returns no recommendations", () => {
+  const now = new Date("2026-01-15T15:00:00Z"); // 15:00 UTC
+  const result = getRecommendations(now, TZ, [], "non_vegetarian", -180);
+  assert.deepEqual(result, []);
+});
+
+// I/O & Edge-Case Matrix (Story 3.5): "Over target, after 10pm ... Local
+// hour 23, remainingBudget = -50 ... [] — Story 3.4's own 'met/over' check
+// never even runs; short-circuited earlier". Distinguishes the Over-Target
+// precedence check from Story 3.4's pre-existing after-10pm `<= 0` handling,
+// which already returned [] for this same input for a different reason.
+test("over target after 10pm returns no recommendations via the precedence short-circuit", () => {
+  const now = new Date("2026-01-15T23:00:00Z"); // 23:00 UTC
+  const result = getRecommendations(now, TZ, [], "non_vegetarian", -50);
+  assert.deepEqual(result, []);
+});
+
+// Confirms the Over-Target guard fires "before any window logic runs"
+// (Intent) regardless of already-filled Meal Slots — a non-empty,
+// meal-classified `entries` array would otherwise still leave slots open
+// this early in the morning window, proving the short-circuit ignores
+// filled-slot count entirely rather than happening to return [] because
+// slots were already full.
+test("over target returns no recommendations even with meal entries already logged", () => {
+  const now = new Date("2026-01-15T08:00:00Z"); // 08:00 UTC, morning window
+  const result = getRecommendations(
+    now,
+    TZ,
+    [{ classification: "meal" }],
+    "non_vegetarian",
+    -50
+  );
+  assert.deepEqual(result, []);
+});
+
+// I/O & Edge-Case Matrix (Story 3.5): "Exactly met (not over) ... Any hour,
+// remainingBudget = 0 ... Unchanged from Stories 3.3/3.4 — normal window
+// rules apply, no banner". Confirms the `< 0` short-circuit does not also
+// swallow the `=== 0` case during a window that would otherwise return
+// recommendations (morning window, unlike the after-10pm tests above which
+// already covered `=== 0` separately).
+test("target met exactly during the morning window is unaffected by the Over-Target check", () => {
+  const now = new Date("2026-01-15T08:00:00Z"); // 08:00 UTC
+  const result = getRecommendations(now, TZ, [], "non_vegetarian", 0);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].slot, "lunch");
+  assert.equal(result[1].slot, "dinner");
+});
+
 // Design Notes: "adds three more" — the lookup table has exactly 4 entries
 // (2 slots x 2 Dietary Preferences), each a non-empty string.
 test("the lookup table has exactly 4 populated entries", () => {
