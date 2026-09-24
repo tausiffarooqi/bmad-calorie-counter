@@ -4,8 +4,7 @@
 // same convention as entry-classifier.ts.
 import type { Classification, DietaryPreference } from "../constants.ts";
 
-// The two Meal Slots this story implements — breakfast is Epic 4's, and the
-// after-10pm window is Story 3.4's (Boundaries & Constraints: neither is
+// The two Meal Slots this file implements — breakfast is Epic 4's (not
 // built here). Order matters: lunch always fills before dinner
 // (EXPERIENCE.md's own worked example, Design Notes).
 export const MEAL_SLOTS = ["lunch", "dinner"] as const;
@@ -37,9 +36,11 @@ export const RECOMMENDATION_COPY: Record<MealSlot, Record<DietaryPreference, str
   },
 };
 
-// 5am-12pm local -> both slots open; 12pm-10pm local -> dinner only; outside
-// that -> zero expected slots for now (Boundaries & Constraints: "Do not
-// implement the 10pm-5am window" — Story 3.4's concern).
+// 5am-12pm local -> both slots open; 12pm-10pm local -> dinner only;
+// 10pm-5am local (hour >= 22 || hour < 5, one continuous range spanning
+// midnight per AD-5's Day boundary — still "tonight," not tomorrow) ->
+// dinner only if the Daily Calorie Target hasn't been met yet
+// (`remainingBudget > 0`), otherwise zero expected slots (Story 3.4).
 const MORNING_WINDOW_START_HOUR = 5;
 const MIDDAY_WINDOW_START_HOUR = 12;
 const EVENING_WINDOW_END_HOUR = 22;
@@ -64,29 +65,42 @@ function getLocalHour(now: Date, tz: string): number {
 }
 
 // Expected Meal Slots for the local hour (Boundaries & Constraints, I/O &
-// Edge-Case Matrix) — earliest slot first.
-function expectedSlotsForHour(hour: number): readonly MealSlot[] {
+// Edge-Case Matrix) — earliest slot first. The single function enforcing
+// every window's precedence (AD-6) — the after-10pm window (Story 3.4) is
+// covered here too, not by a separate implementation.
+function expectedSlotsForHour(hour: number, remainingBudget: number): readonly MealSlot[] {
   if (hour >= MORNING_WINDOW_START_HOUR && hour < MIDDAY_WINDOW_START_HOUR) {
     return MEAL_SLOTS;
   }
   if (hour >= MIDDAY_WINDOW_START_HOUR && hour < EVENING_WINDOW_END_HOUR) {
     return ["dinner"];
   }
-  return [];
+  // hour >= 22 || hour < 5 — the after-10pm/before-5am range, one continuous
+  // window spanning midnight (still the same Day, AD-5). One dinner slot if
+  // the Daily Calorie Target hasn't been met yet, zero if it has (met
+  // exactly or over — Story 3.5's Over-Target banner is a separate layer on
+  // top, not this story's concern).
+  return remainingBudget > 0 ? ["dinner"] : [];
 }
 
 // The one function computing which Meal Slots are still open right now
 // (Code Map) — pure, sync, compute-don't-store (AD-7). `entries` should be
 // the caller's already Day-scoped (dayBoundary()-filtered) Entries for
 // "today"; this does no date-attribution math of its own beyond reading the
-// current local hour.
+// current local hour. `remainingBudget` is Story 3.2's Remaining Calorie
+// Budget (Daily Calorie Target minus today's summed calories) for that same
+// Day, already computed by the caller (budget-engine.ts) and passed through
+// unclamped — positive means the target hasn't been met yet, zero or
+// negative means it has (met exactly or exceeded); only the after-10pm/
+// before-5am window (Story 3.4) currently keys off its sign.
 export function getRecommendations(
   now: Date,
   tz: string,
   entries: { classification: Classification }[],
-  dietaryPreference: DietaryPreference
+  dietaryPreference: DietaryPreference,
+  remainingBudget: number
 ): Recommendation[] {
-  const expectedSlots = expectedSlotsForHour(getLocalHour(now, tz));
+  const expectedSlots = expectedSlotsForHour(getLocalHour(now, tz), remainingBudget);
 
   // Filled-slot count = Meal-classified Entries logged today only —
   // Snack/Beverage Entries never reduce it (Boundaries & Constraints:

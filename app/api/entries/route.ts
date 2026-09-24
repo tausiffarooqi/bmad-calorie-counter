@@ -267,7 +267,12 @@ export async function POST(request: Request) {
   // FR-9's response contract: every successful submission returns the
   // estimated calories, the updated Remaining Calorie Budget, and one
   // Recommendation per remaining Meal Slot, all together — never just the
-  // calories alone. Re-fetches today's Entries + profile fresh (a second
+  // calories alone. `recommendations` can come back `[]` for two distinct
+  // reasons: every expected Meal Slot is already filled by an earlier Meal
+  // (Story 3.3), or — after 10pm/before 5am (Story 3.4) — the Daily Calorie
+  // Target has already been met or exceeded, which suppresses the window's
+  // one expected slot entirely; `getRecommendations()` is the single place
+  // both are decided. Re-fetches today's Entries + profile fresh (a second
   // read, not the pre-submission `rows`/`profile` from anywhere else in
   // this handler — there isn't one, since POST never fetched them before
   // now) so the just-created Entry above is itself included in both the
@@ -301,7 +306,8 @@ export async function POST(request: Request) {
         now,
         tz,
         toRecommendationEntries(freshRows),
-        toDietaryPreference(freshProfile.dietaryPreference)
+        toDietaryPreference(freshProfile.dietaryPreference),
+        remainingBudget
       );
     }
   } catch (error) {
@@ -436,7 +442,8 @@ export async function GET(request: Request) {
       now,
       tz,
       toRecommendationEntries(rows),
-      toDietaryPreference(profile.dietaryPreference)
+      toDietaryPreference(profile.dietaryPreference),
+      remainingBudget
     );
   } catch (error) {
     console.error("Failed to compute recommendations:", error);
