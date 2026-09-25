@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createEntry, getEntriesForDay } from "@/lib/services/entries";
 import { classify } from "@/lib/services/entry-classifier";
-import { dayBoundary, isValidTimeZone } from "@/lib/services/day-boundary";
+import { dayBoundary, isValidTimeZone, previousDayBoundary } from "@/lib/services/day-boundary";
 import { getProfile, checkAndMarkFirstLoginPrompt } from "@/lib/services/profiles";
 import { computeRemainingBudget } from "@/lib/services/budget-engine";
 import { getRecommendations } from "@/lib/services/recommendation-engine";
+import { getToneMessageOutcome, TONE_MESSAGES } from "@/lib/services/tone-message";
 import { GeminiAdapter } from "@/lib/estimation/gemini-adapter";
 import type { EstimationInput } from "@/lib/estimation/types";
 import {
@@ -390,8 +391,14 @@ export async function GET(request: Request) {
 
   let rows;
   let profile;
+  // Hoisted out of the try block below (Story 4.2 Code Map: "reusing the
+  // already-computed todayStart") — the tone-message computation further
+  // down needs today's Day-start instant to derive yesterday's window, and
+  // it runs after this whole block has already succeeded.
+  let todayStart: Date;
   try {
     const { start, end } = dayBoundary(now, tz);
+    todayStart = start;
     // Independent lookups against different tables (`entries`/`profiles`),
     // run concurrently — no second DB query against `entries` (Code Map),
     // just the one extra `profiles` lookup needed to compute
@@ -472,6 +479,45 @@ export async function GET(request: Request) {
     return entriesFetchFailedResponse();
   }
 
+  // Story 4.2: computed only when the First-Login prompt is already showing
+  // (Boundaries & Constraints: "Do not compute or return this message when
+  // the First-Login prompt isn't showing") — avoids an unnecessary query
+  // otherwise (Code Map). "Yesterday" is derived via `dayBoundary()` applied
+  // one instant before today's Day-start — reusing the already-computed
+  // `todayStart`, never separate date math (Approach) — and compared
+  // against the *current* `profile.dailyCalorieTarget` (this app has no
+  // historized/versioned target-per-Day, Boundaries & Constraints).
+  let toneMessage: string | undefined;
+  if (showFirstLoginPrompt) {
+    // Enrichment on top of the now-guaranteed-successful reads above — a
+    // failure here must not fail the whole response (mirrors this file's
+    // own "enrichment failure falls back, never fails the primary
+    // response" pattern used for checkAndMarkFirstLoginPrompt()/POST's
+    // post-submission recompute above). Falls back to `undefined`, which
+    // the response below omits — the First-Login prompt itself still
+    // renders, just without its tone-message line. Split into two
+    // try/catches (the DB read vs. the pure classify+lookup) so a failure
+    // is attributed to the step that actually failed, matching the
+    // Promise.all block above giving entries/profile their own distinct
+    // log messages.
+    let yesterdayRows: Awaited<ReturnType<typeof getEntriesForDay>> | undefined;
+    try {
+      const { start: yesterdayStart, end: yesterdayEnd } = previousDayBoundary(todayStart, tz);
+      yesterdayRows = await getEntriesForDay(user.id, yesterdayStart, yesterdayEnd);
+    } catch (error) {
+      console.error("Failed to fetch yesterday's entries for tone message:", error);
+    }
+
+    if (yesterdayRows) {
+      try {
+        const outcome = getToneMessageOutcome(yesterdayRows, profile.dailyCalorieTarget);
+        toneMessage = TONE_MESSAGES[outcome];
+      } catch (error) {
+        console.error("Failed to compute tone-adaptive message outcome:", error);
+      }
+    }
+  }
+
   return NextResponse.json({
     entries: rows.map((row) => ({
       id: row.id,
@@ -483,5 +529,6 @@ export async function GET(request: Request) {
     remainingBudget,
     recommendations,
     showFirstLoginPrompt,
+    toneMessage,
   });
 }

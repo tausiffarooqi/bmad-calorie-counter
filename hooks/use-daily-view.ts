@@ -17,6 +17,9 @@ interface EntriesApiResponse {
   remainingBudget?: number;
   recommendations?: Recommendation[];
   showFirstLoginPrompt?: boolean;
+  // Story 4.2: omitted/undefined whenever `showFirstLoginPrompt` is false —
+  // the server never computes it in that case (Boundaries & Constraints).
+  toneMessage?: string;
 }
 
 // Shared fetch for the Daily view — one call to `GET /api/entries` feeding
@@ -33,6 +36,7 @@ export function useDailyView(refreshKey: number) {
   const [remainingBudget, setRemainingBudget] = useState<number | undefined>(undefined);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [showFirstLoginPrompt, setShowFirstLoginPrompt] = useState(false);
+  const [toneMessage, setToneMessage] = useState<string | undefined>(undefined);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -81,6 +85,7 @@ export function useDailyView(refreshKey: number) {
       setRemainingBudget(result.remainingBudget);
       setRecommendations(result.recommendations ?? []);
       setShowFirstLoginPrompt(result.showFirstLoginPrompt ?? false);
+      setToneMessage(result.toneMessage);
     }
 
     load();
@@ -90,5 +95,12 @@ export function useDailyView(refreshKey: number) {
     };
   }, [refreshKey]);
 
-  return { entries, remainingBudget, recommendations, showFirstLoginPrompt, loadError };
+  return {
+    entries,
+    remainingBudget,
+    recommendations,
+    showFirstLoginPrompt,
+    toneMessage,
+    loadError,
+  };
 }

@@ -140,3 +140,12 @@ export function dayBoundary(timestamp: Date, tz: string): { start: Date; end: Da
 
   return { start, end };
 }
+
+// Derives "yesterday's" Day window from an already-computed `todayStart`
+// instant (Story 4.2's tone-message lookup) — one instant before today's
+// Day-start, run back through `dayBoundary()` itself rather than separate
+// date math, since that's the only function allowed to decide Day
+// attribution (module header above).
+export function previousDayBoundary(todayStart: Date, tz: string): { start: Date; end: Date } {
+  return dayBoundary(new Date(todayStart.getTime() - 1), tz);
+}

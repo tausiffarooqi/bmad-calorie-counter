@@ -27,7 +27,7 @@ export default function Home() {
   // marked today's First-Login prompt shown" — the server-side write
   // already happened by the time this resolves (Boundaries & Constraints),
   // so nothing here writes anything back.
-  const { entries, remainingBudget, recommendations, showFirstLoginPrompt, loadError } =
+  const { entries, remainingBudget, recommendations, showFirstLoginPrompt, toneMessage, loadError } =
     useDailyView(refreshKey);
 
   // Local-only "the user already tapped one of the prompt's two buttons
@@ -108,10 +108,28 @@ export default function Home() {
         // resolves it" (Approach). Both buttons resolve to the same next
         // state (Boundaries & Constraints), so `onResolve` is the same
         // callback either way.
-        <FirstLoginPrompt
-          remainingBudget={remainingBudget}
-          onResolve={() => setPromptDismissed(true)}
-        />
+        <>
+          {/* Story 4.2: its own small text line above the existing prompt
+              card (Approach) — never inside FirstLoginPrompt, which stays
+              frozen to budget + question (Boundaries & Constraints: "Do not
+              touch Story 4.1's FirstLoginPrompt component itself"). Only
+              ever present alongside `showFirstLoginPrompt` (the server never
+              computes it otherwise), so no separate gating is needed here.
+              Wrapped with FirstLoginPrompt in its own tight-gap column
+              rather than left as bare Fragment children of the page's outer
+              `gap-6` flex-col — that would space the message from the card
+              exactly as far apart as unrelated major page sections,
+              contradicting "immediately above". */}
+          <div className="flex w-full max-w-sm flex-col items-center gap-2">
+            {toneMessage && (
+              <p className="w-full text-sm text-muted-foreground">{toneMessage}</p>
+            )}
+            <FirstLoginPrompt
+              remainingBudget={remainingBudget}
+              onResolve={() => setPromptDismissed(true)}
+            />
+          </div>
+        </>
       ) : (
         <>
           {firstLoadPending ? (

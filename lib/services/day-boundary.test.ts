@@ -9,7 +9,7 @@
 // Run with: node --test lib/services/day-boundary.test.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { dayBoundary, isValidTimeZone } from "./day-boundary.ts";
+import { dayBoundary, isValidTimeZone, previousDayBoundary } from "./day-boundary.ts";
 
 function localParts(instant: Date, tz: string) {
   const formatter = new Intl.DateTimeFormat("en-US", {
@@ -94,6 +94,14 @@ test("isValidTimeZone accepts real IANA zones and rejects nonsense", () => {
   assert.equal(isValidTimeZone("UTC"), true);
   assert.equal(isValidTimeZone("Foo/Bar"), false);
   assert.equal(isValidTimeZone(""), false);
+});
+
+test("previousDayBoundary derives yesterday's window from today's start, one instant earlier", () => {
+  const { start: todayStart } = dayBoundary(new Date("2026-01-15T15:00:00Z"), "America/New_York");
+  const yesterday = previousDayBoundary(todayStart, "America/New_York");
+  const expected = dayBoundary(new Date(todayStart.getTime() - 1), "America/New_York");
+  assert.equal(yesterday.start.getTime(), expected.start.getTime());
+  assert.equal(yesterday.end.getTime(), todayStart.getTime());
 });
 
 // KNOWN LIMITATION, not asserted correct here: a DST "fall back" (clocks
