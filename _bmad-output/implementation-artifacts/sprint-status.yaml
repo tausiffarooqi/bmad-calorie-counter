@@ -63,8 +63,8 @@ development_status:
   3-5-over-target-override: done
   epic-3-retrospective: optional
 
-  epic-4: backlog
-  4-1-first-login-prompt-remaining-budget: backlog
+  epic-4: in-progress
+  4-1-first-login-prompt-remaining-budget: review
   4-2-tone-adaptive-daily-message: backlog
   4-3-decline-path-recommendations: backlog
   4-4-pre-10am-breakfast-offer: backlog

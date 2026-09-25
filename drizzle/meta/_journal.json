@@ -29,6 +29,13 @@
       "when": 1790118116672,
       "tag": "0003_same_ikaris",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790315276745,
+      "tag": "0004_regular_snowbird",
+      "breakpoints": true
     }
   ]
 }

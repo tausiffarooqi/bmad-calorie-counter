@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { profiles } from "@/lib/db/schema";
+import { dayBoundary } from "@/lib/services/day-boundary";
 import type { DietaryPreference } from "@/lib/constants";
 
 // The only code path allowed to read/write `profiles` (AD-1 layered
@@ -41,6 +42,37 @@ export async function updateDietaryPreference(userId: string, dietaryPreference:
   const rows = await db
     .update(profiles)
     .set({ dietaryPreference })
+    .where(eq(profiles.userId, userId))
+    .returning({ userId: profiles.userId });
+  return rows.length > 0;
+}
+
+// Story 4.1's "is this the first app-open of the current Day" check, marked
+// atomically with the check itself (Approach: "marking the prompt shown
+// happens server-side, at the moment the Daily view is loaded/queried").
+// `dayBoundary()` (AD-5) is the sole Day-attribution authority — no
+// separate/inline date math here (Boundaries & Constraints). A simple
+// read-then-conditionally-write, not a compare-and-swap — acceptable given
+// this app's single-user-at-a-time hobby scale (Code Map), so a race
+// between two concurrent loads the same instant is not guarded against.
+// Takes `lastFirstLoginPromptAt`/`now` from the caller rather than
+// re-fetching the profile or computing its own `new Date()` — the caller
+// (the route) already has the profile in scope from its own primary read,
+// and reuses the one `now` instant the rest of that request is computed
+// against.
+export async function checkAndMarkFirstLoginPrompt(
+  userId: string,
+  lastFirstLoginPromptAt: Date | null,
+  now: Date,
+  tz: string
+): Promise<boolean> {
+  const { start } = dayBoundary(now, tz);
+  const alreadyShownToday = lastFirstLoginPromptAt !== null && lastFirstLoginPromptAt >= start;
+  if (alreadyShownToday) return false;
+
+  const rows = await db
+    .update(profiles)
+    .set({ lastFirstLoginPromptAt: now })
     .where(eq(profiles.userId, userId))
     .returning({ userId: profiles.userId });
   return rows.length > 0;

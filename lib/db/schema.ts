@@ -14,6 +14,13 @@ export const profiles = pgTable("profiles", {
   dailyCalorieTarget: integer("daily_calorie_target").notNull(),
   dietaryPreference: text("dietary_preference").notNull().default("non_vegetarian"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  // Story 4.1's persisted "have they already seen today's First-Login
+  // prompt" signal — nullable, no default (null means "never shown,"
+  // including every profile that existed before this column was added, the
+  // same as a brand-new registration). checkAndMarkFirstLoginPrompt()
+  // (lib/services/profiles.ts) is the only code path that reads or writes
+  // it (AD-1).
+  lastFirstLoginPromptAt: timestamp("last_first_login_prompt_at", { withTimezone: true }),
 });
 
 export const entries = pgTable(

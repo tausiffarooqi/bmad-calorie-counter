@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createEntry, getEntriesForDay } from "@/lib/services/entries";
 import { classify } from "@/lib/services/entry-classifier";
 import { dayBoundary, isValidTimeZone } from "@/lib/services/day-boundary";
-import { getProfile } from "@/lib/services/profiles";
+import { getProfile, checkAndMarkFirstLoginPrompt } from "@/lib/services/profiles";
 import { computeRemainingBudget } from "@/lib/services/budget-engine";
 import { getRecommendations } from "@/lib/services/recommendation-engine";
 import { GeminiAdapter } from "@/lib/estimation/gemini-adapter";
@@ -423,6 +423,28 @@ export async function GET(request: Request) {
     return entriesFetchFailedResponse();
   }
 
+  // Story 4.1: reads + (if needed) marks `lastFirstLoginPromptAt`, using the
+  // `profile` this handler already fetched above (no redundant re-fetch)
+  // and the same `now` the rest of this request is computed against (no
+  // second, slightly-later instant). Deliberately run only *after* the
+  // primary entries/profile reads above have already succeeded — never
+  // inside that `Promise.all` — so a failure in either of those reads can
+  // never leave this write committed for a Day the user was actually shown
+  // an error instead of the prompt. Its own `.catch()` still falls back to
+  // `false` rather than rethrowing — this signal is an enrichment on top of
+  // the now-guaranteed-successful reads above, so a failure here must not
+  // fail the whole response (mirrors POST's "enrichment failure falls back,
+  // never fails the primary response" pattern).
+  const showFirstLoginPrompt = await checkAndMarkFirstLoginPrompt(
+    user.id,
+    profile.lastFirstLoginPromptAt,
+    now,
+    tz
+  ).catch((error) => {
+    console.error("Failed to check/mark first-login prompt:", error);
+    return false;
+  });
+
   // `computeRemainingBudget()` is the single place this subtraction
   // happens (budget-engine.ts) — both Meal and Snack/Beverage Entries
   // count identically (FR-8), and the result is returned unclamped, even
@@ -460,5 +482,6 @@ export async function GET(request: Request) {
     })),
     remainingBudget,
     recommendations,
+    showFirstLoginPrompt,
   });
 }
