@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, TrendingUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { LogOut, Settings, TrendingUp } from "lucide-react";
+import { HeaderIconButton } from "@/app/header-icon-button";
 import { LogEntryDialog } from "@/app/log-entry-dialog";
 import { LogPhotoDialog } from "@/app/log-photo-dialog";
 import { EntriesList } from "@/app/entries-list";
@@ -10,6 +10,8 @@ import { FirstLoginPrompt } from "@/app/first-login-prompt";
 import { BreakfastOfferCard } from "@/app/breakfast-offer-card";
 import { useDailyView } from "@/hooks/use-daily-view";
 import { getClientTimeZone } from "@/lib/get-client-timezone";
+import { createClient } from "@/lib/supabase/client";
+import { redirectToLogin } from "@/lib/handle-session-expiry";
 
 // The Daily view — Epic 3 replaced this file's original Epic 0 foundation
 // showcase with the real, production implementation (budget, entries,
@@ -74,6 +76,30 @@ export default function Home() {
     bumpRefreshKey();
   }
 
+  // Story 1.5: ends the Supabase Auth session, then hard-navigates to
+  // /login via the shared redirectToLogin() helper (lib/handle-session-
+  // expiry.ts) — the same hard-navigation approach the Login page's own
+  // post-auth redirect uses (window.location.href, not router.push()),
+  // and for the same reason: a soft/RSC navigation can race ahead of the
+  // browser client's signOut() call actually clearing the session cookie.
+  // No new backend route or route-guard logic — proxy.ts's existing
+  // middleware session check (Story 1.2) already redirects every
+  // authenticated route to /login once the session is gone. A failed
+  // signOut() call (e.g. a dropped network request) still redirects
+  // (Code Map precedent: handleAcceptBreakfastOffer's identical
+  // "network failure still resolves the action" shape) — leaving the
+  // user stranded on a page with no way back to Login would be worse
+  // than a redirect that might need a second logout attempt.
+  async function handleLogout() {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Failed to sign out:", error);
+    }
+    redirectToLogin();
+  }
+
   // The first fetch hasn't resolved (success or failure) yet — EXPERIENCE.md's
   // Cold-load State Pattern: a brief skeleton matching the eventual layout
   // (budget number, entries container), resolving the instant real data
@@ -111,19 +137,18 @@ export default function Home() {
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
       <div className="flex w-full justify-end gap-1">
         {/* Story 5.1: nav link to the new Historical Trends view (Code Map)
-            — same icon-only `Button asChild variant="ghost" size="icon"`
-            treatment as the existing Settings control right beside it,
-            with its own accessible name. */}
-        <Button asChild variant="ghost" size="icon">
-          <a href="/trends" aria-label="View historical trends" title="View historical trends">
-            <TrendingUp />
-          </a>
-        </Button>
-        <Button asChild variant="ghost" size="icon">
-          <a href="/preferences" aria-label="Open account settings" title="Open account settings">
-            <Settings />
-          </a>
-        </Button>
+            — same shared HeaderIconButton as the Settings control right
+            beside it, with its own accessible name. */}
+        <HeaderIconButton href="/trends" label="View historical trends" icon={<TrendingUp />} />
+        <HeaderIconButton href="/preferences" label="Open account settings" icon={<Settings />} />
+        {/* Story 1.5 review finding: a hairline divider (DESIGN.md's
+            "depth via border hairlines, not shadows" convention) separates
+            the two benign navigation icons from Logout — otherwise it sits
+            the same size, spacing, and visual weight as Settings right next
+            to it, and unlike mistaking Settings for Trends, a mis-tap here
+            ends the session. */}
+        <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-border" />
+        <HeaderIconButton onClick={handleLogout} label="Log out" icon={<LogOut />} />
       </div>
       {/* Story 4.1: this top-level header duplicates the same figure the
           First-Login prompt card's own "Remaining budget today: N calories"
