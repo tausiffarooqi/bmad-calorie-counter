@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { EntryStatusCard } from "@/components/entry-status-card";
 import { LiveRegion } from "@/components/live-region";
@@ -30,8 +30,27 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
   const [open, setOpen] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [rejection, setRejection] = useState<string | undefined>();
+  // Story 2.6: a preview of the exact photo the user picked (FR-25) — an
+  // object URL over the original `File`, not the later-compressed bytes,
+  // since "the photo they just uploaded" means what they recognize having
+  // picked. Revoked (not just replaced) on every new pick and on dialog
+  // close, since object URLs otherwise leak for the page's lifetime.
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { status, message, calories, submit, cancelAndReset } = useEntrySubmission();
+
+  // Review finding: the explicit revokes in handleFileChange/handleOpenChange
+  // only cover a new pick or a user-initiated close — if this component
+  // itself unmounts while a preview is active (e.g. a future parent change
+  // conditionally unmounts it), neither of those handlers ever runs. This
+  // effect is the backstop for that case; it's a no-op cleanup for the
+  // already-handled paths, since `previewUrl` is `undefined` by the time
+  // this component would normally unmount through them.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   // Guards the compression phase, which sits *before* useEntrySubmission's
   // own requestId/AbortController machinery ever engages (that only covers
@@ -48,6 +67,12 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
       cancelAndReset();
       setPreparing(false);
       setRejection(undefined);
+      // Story 2.6: the preview is scoped strictly to this submission
+      // attempt (FR-25) — discarded, not carried into the next open.
+      setPreviewUrl((current) => {
+        if (current) URL.revokeObjectURL(current);
+        return undefined;
+      });
     }
     setOpen(next);
   }
@@ -73,6 +98,19 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
     cancelAndReset();
     setRejection(undefined);
     setOpen(true);
+    // Story 2.6: set in the same synchronous batch as `setOpen(true)`,
+    // deliberately NOT after the tick-delay below — FR-25 requires the
+    // preview to be visible the instant the dialog opens, the opposite of
+    // Story 2.5's LiveRegion timing fix (that one needed an empty first
+    // commit; a plain <img> has no ARIA mount-timing concern and should
+    // just show immediately). Revokes any still-active URL from an earlier
+    // pick in the same open dialog (the "Try another photo" retry path),
+    // matching this function's existing "a new pick supersedes stale
+    // state" rule above.
+    setPreviewUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return URL.createObjectURL(file);
+    });
 
     // Yield a tick before setting `preparing` so this dialog's first-ever
     // open commits with LiveRegion mounted empty, then mutates to
@@ -172,6 +210,16 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
+            {previewUrl && (
+              // Story 2.6 (FR-25): a plain <img>, not next/image — next/image
+              // requires a loader and cannot resolve a `blob:` object URL.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={previewUrl}
+                alt="Photo you just uploaded"
+                className="max-h-48 w-full rounded-md bg-muted object-contain"
+              />
+            )}
             {preparing && (
               <EntryStatusCard variant="pending" role="status">
                 Preparing photo…
