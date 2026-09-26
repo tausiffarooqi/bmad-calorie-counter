@@ -52,8 +52,18 @@ export default function LoginPage() {
       // a well-documented Supabase+Next.js footgun, confirmed live in this
       // story (router.push() bounced back to /login). A full reload
       // guarantees the proxy sees the new session.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.href = "/";
+      //
+      // Epic 1 retro action item: honor proxy.ts's `?next=` deep-link
+      // param when present, falling back to "/" otherwise. Only ever
+      // follows a same-origin relative path (must start with a single "/",
+      // never "//" or "/\" — both are protocol-relative external URLs some
+      // browsers normalize a leading backslash into) so a tampered query
+      // string can't redirect off-site.
+      const next = new URLSearchParams(window.location.search).get("next");
+      const isSafeRelativePath = (value: string | null): value is string =>
+        value !== null && /^\/(?![/\\])/.test(value);
+      const destination = isSafeRelativePath(next) ? next : "/";
+      window.location.href = destination;
     } catch {
       setError("Couldn't reach the server — check your connection and try again.");
     } finally {

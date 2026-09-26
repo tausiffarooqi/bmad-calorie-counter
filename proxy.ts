@@ -54,9 +54,17 @@ export async function proxy(request: NextRequest) {
   // just-rotated refresh token, bouncing the user back to /login on their
   // very next request (the documented Supabase-SSR proxy footgun).
   if (!user && !onPublicPath) {
+    // Epic 1 retro action item: preserve the originally-requested
+    // destination across the login bounce (Story 1.2's own deferred item
+    // — "zero impact today since / is the only protected route" — whose
+    // stated revisit condition, "once Epic 2+ adds real protected routes,"
+    // has since happened: /trends, /preferences). Only a same-origin
+    // relative path is ever written here (derived from this same request's
+    // own URL, never user-supplied), so there's no open-redirect risk.
+    const destination = request.nextUrl.pathname + request.nextUrl.search;
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
-    redirectUrl.search = "";
+    redirectUrl.search = destination === "/" ? "" : `?next=${encodeURIComponent(destination)}`;
     const redirect = NextResponse.redirect(redirectUrl);
     response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
     return redirect;

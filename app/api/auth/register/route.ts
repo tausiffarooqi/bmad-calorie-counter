@@ -128,6 +128,15 @@ export async function POST(request: Request) {
     } catch (rollbackError) {
       console.error("Failed to roll back orphaned Auth user:", rollbackError);
     }
+    // Epic 1 retro action item: signUp() above already staged a session
+    // cookie on this response before this failure was known — without
+    // clearing it, the browser is left holding a valid-looking session for
+    // an auth.users id the line above just told the admin API to delete.
+    try {
+      await supabase.auth.signOut();
+    } catch (signOutError) {
+      console.error("Failed to clear session cookie after rollback:", signOutError);
+    }
     return NextResponse.json(
       {
         error: {

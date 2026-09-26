@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MAX_DAILY_CALORIE_TARGET } from "@/lib/constants";
 
 // Standard adult daily intake default (PRD FR-13 [ASSUMPTION]) — the user
 // can accept or change it before submitting.
@@ -39,6 +40,18 @@ export default function RegisterPage() {
     const target = Number(dailyCalorieTarget);
     if (!Number.isInteger(target) || target <= 0) {
       setErrors({ dailyCalorieTarget: "Enter a whole number greater than 0." });
+      return;
+    }
+
+    // Epic 1 retro action item: lib/constants.ts documents this constant as
+    // the single source of truth for register, preferences (client +
+    // server) — this form was the one caller that never actually enforced
+    // it, only the server route did (a full round trip to discover an
+    // over-limit value instead of an instant inline error).
+    if (target > MAX_DAILY_CALORIE_TARGET) {
+      setErrors({
+        dailyCalorieTarget: `Daily Calorie Target must be ${MAX_DAILY_CALORIE_TARGET.toLocaleString()} or less.`,
+      });
       return;
     }
 

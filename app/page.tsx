@@ -11,10 +11,9 @@ import { BreakfastOfferCard } from "@/app/breakfast-offer-card";
 import { useDailyView } from "@/hooks/use-daily-view";
 import { getClientTimeZone } from "@/lib/get-client-timezone";
 
-// Temporary foundation showcase for Epic 0 (UX Foundation). Exercises the
-// Muted Earth Editorial tokens (Story 0.1) and the global focus-visible
-// ring (Story 0.2) so both can be visually verified before any real screen
-// is built. Replaced by the actual Daily view in Epic 3.
+// The Daily view — Epic 3 replaced this file's original Epic 0 foundation
+// showcase with the real, production implementation (budget, entries,
+// recommendations, first-login/breakfast prompts).
 export default function Home() {
   // Bumped by either dialog's onSuccess so EntriesList refetches and shows
   // a just-logged Entry without a page reload (Story 2.4 Code Map).

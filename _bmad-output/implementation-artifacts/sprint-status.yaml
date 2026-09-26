@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-25-2026 20:46'
+last_updated: '09-25-2026 20:52'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -107,21 +107,21 @@ action_items:
     action: "Clear the session cookie on registration rollback (app/api/auth/register/route.ts
       createProfile failure branch)"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
   - id: "epic-1-retro-item-6-enforce-max_daily_calorie_target-client"
     epic: 1
     action: "Enforce MAX_DAILY_CALORIE_TARGET client-side on Register (app/(routes)/register/page.tsx
       handleSubmit)"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
   - id: "epic-1-retro-item-7-add-next-deep-link-preservation-across-t"
     epic: 1
     action: "Add ?next= deep-link preservation across the login redirect (proxy.ts
       + login/page.tsx) -- Story 1.2s own deferred revisit condition has now occurred"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
   - id: "epic-1-retro-item-8-decide-whether-a-logout-affordance-is-in"
     epic: 1
@@ -135,14 +135,14 @@ action_items:
     action: "Add a way back to the Daily view from /preferences and /trends (one shared
       nav affordance)"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
   - id: "epic-1-retro-item-10-remove-or-update-the-stale-temporary-fou"
     epic: 1
     action: "Remove or update the stale Temporary foundation showcase for Epic 0 comment
       in app/page.tsx:14"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
   - id: "epic-2-retro-item-11-make-the-server-respect-a-cancelled-abor"
     epic: 2

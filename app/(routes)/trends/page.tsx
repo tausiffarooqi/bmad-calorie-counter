@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getClientTimeZone } from "@/lib/get-client-timezone";
 import { computeTrendSummaryStats, type TrendDay } from "@/lib/services/trends";
+import { BackToDailyViewLink } from "@/app/back-to-daily-view-link";
 
 interface TrendsApiResponse {
   days?: TrendDay[];
@@ -85,6 +86,9 @@ export default function TrendsPage() {
 
   return (
     <div className="flex flex-1 flex-col items-center gap-6 bg-background p-8 text-foreground">
+      <div className="flex w-full max-w-sm flex-col gap-2">
+        <BackToDailyViewLink />
+      </div>
       <h1 className="text-lg font-semibold">Historical Trends</h1>
 
       {firstLoadPending && (

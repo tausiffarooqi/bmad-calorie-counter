@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/services/profiles";
 import { PreferencesForm } from "./preferences-form";
+import { BackToDailyViewLink } from "@/app/back-to-daily-view-link";
 
 export default async function PreferencesPage() {
   const supabase = await createClient();
@@ -26,6 +27,9 @@ export default async function PreferencesPage() {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
+      <div className="flex w-full max-w-sm flex-col gap-2">
+        <BackToDailyViewLink />
+      </div>
       <div className="flex w-full max-w-sm flex-col gap-4 rounded-md border border-border bg-card p-6">
         <h1 className="text-lg font-semibold">Account & Preferences</h1>
         <PreferencesForm
