@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Settings } from "lucide-react";
+import { Settings, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LogEntryDialog } from "@/app/log-entry-dialog";
 import { LogPhotoDialog } from "@/app/log-photo-dialog";
@@ -108,11 +108,22 @@ export default function Home() {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
-      <Button asChild variant="ghost" size="icon" className="self-end">
-        <a href="/preferences" aria-label="Open account settings" title="Open account settings">
-          <Settings />
-        </a>
-      </Button>
+      <div className="flex w-full justify-end gap-1">
+        {/* Story 5.1: nav link to the new Historical Trends view (Code Map)
+            — same icon-only `Button asChild variant="ghost" size="icon"`
+            treatment as the existing Settings control right beside it,
+            with its own accessible name. */}
+        <Button asChild variant="ghost" size="icon">
+          <a href="/trends" aria-label="View historical trends" title="View historical trends">
+            <TrendingUp />
+          </a>
+        </Button>
+        <Button asChild variant="ghost" size="icon">
+          <a href="/preferences" aria-label="Open account settings" title="Open account settings">
+            <Settings />
+          </a>
+        </Button>
+      </div>
       {/* Story 4.1: this top-level header duplicates the same figure the
           First-Login prompt card's own "Remaining budget today: N calories"
           text already shows — hidden whenever the prompt is showing so the
