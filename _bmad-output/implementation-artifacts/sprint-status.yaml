@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-25-2026 20:05'
+last_updated: '09-25-2026 20:12'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -73,7 +73,7 @@ development_status:
   epic-5: done
   5-1-3-month-trend-view: done
   5-2-trend-summary-stats: done
-  epic-5-retrospective: optional
+  epic-5-retrospective: done
 
 action_items:
   - id: "epic-0-retro-item-1-fix-dialogcontent-missing-focus-visible"
@@ -259,3 +259,33 @@ action_items:
     owner: "next dev session"
     status: open
     ref: "_bmad-output/implementation-artifacts/epic-4-retro-2026-09-25.md"
+  - id: "epic-5-retro-item-26-fix-the-trends-date-range-label-derive-e"
+    epic: 5
+    action: "Fix the trends date-range label: derive earliest/latest by value instead
+      of positional indexing, special-case a single-day window (no duplicated date),
+      and reorder/annotate to match the day lists own most-recent-first direction"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-5-retro-2026-09-25.md"
+  - id: "epic-5-retro-item-27-add-year-disambiguation-to-trends-format"
+    epic: 5
+    action: "Add year disambiguation to trends formatDayLabel() when the range spans
+      a calendar-year boundary (not yet reachable, bundle with the label fix above)"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-5-retro-2026-09-25.md"
+  - id: "epic-5-retro-item-28-extract-one-shared-hasdata-boolean-for-t"
+    epic: 5
+    action: "Extract one shared hasData boolean for the trends stats-block/day-list
+      visibility gate instead of two independently-written conditions"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-5-retro-2026-09-25.md"
+  - id: "epic-5-retro-item-29-re-prioritize-the-trends-target-reclassi"
+    epic: 5
+    action: "Re-prioritize the trends target-reclassifies-history and dual-aria-live
+      findings -- both independently rediscovered by every reviewer across two separate
+      review rounds (Story 5.2 build review and this retro)"
+    owner: "human decision needed first"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-5-retro-2026-09-25.md"
