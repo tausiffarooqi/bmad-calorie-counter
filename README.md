@@ -1,6 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Calorie Tracker MVP
+
+A solo-use, web-based prototype for tracking daily calorie intake. Log a meal by snapping a photo or typing a quick description, and within seconds get an estimated calorie count, your remaining calorie budget for the day, and a concrete recommendation for what to eat next — no manual math, no social features. Built with Next.js and Supabase.
+
+## Documentation
+
+- [Architecture](_bmad-output/planning-artifacts/architecture/architecture-bmad-calorie-counter-2026-09-16/ARCHITECTURE-SPINE.md)
+- [PRD](_bmad-output/planning-artifacts/prds/prd-bmad-calorie-counter-2026-09-15/prd.md)
+- [Experience](_bmad-output/planning-artifacts/ux-designs/ux-bmad-calorie-counter-2026-09-18/EXPERIENCE.md)
+- [Epics](_bmad-output/planning-artifacts/epics.md)
 
 ## Getting Started
+
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 First, run the development server:
 
