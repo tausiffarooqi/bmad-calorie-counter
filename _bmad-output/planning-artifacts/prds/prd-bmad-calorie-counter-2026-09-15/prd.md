@@ -86,6 +86,15 @@ Every Entry (photo or text) is timestamped at the moment of submission.
 #### FR-6: Photo discarded, description retained
 Once a photo Entry has been analyzed, the original photo is discarded; only the system-generated text description is retained as part of the permanent log record.
 
+#### FR-25: Photo preview during estimation
+For a photo Entry, user sees a preview of the photo they just uploaded, from the moment it's picked through to when the estimate result is shown, so they can visually confirm what was submitted and what it was estimated against.
+
+**Consequences (testable):**
+- The preview appears as soon as the photo is picked, before the estimate resolves, and remains visible continuously through the in-progress state (FR-9) and the success confirmation (estimated calories shown, FR-9) — it does not disappear partway through and reappear; it is present for the whole submission attempt, until the dialog closes.
+- If the Entry needs a retry (FR-4), the preview remains visible alongside the retry prompt too, since the same photo is what gets resubmitted.
+- The preview is ephemeral to the current submission attempt only — it is not persisted anywhere and does not appear in the Entries list, a reload, or a different device.
+- This does not change FR-6: the photo is still discarded server-side after analysis and never written to disk, the database, or any storage bucket. The preview is rendered entirely from the file already in the browser's own memory, with no new server-side storage requirement.
+
 **Feature-specific NFRs:**
 - Combined FR-2/FR-3 + FR-8 (response composition) round trip targets under 5 seconds (see SM-1) — a soft goal; see FR-9 for the in-progress-indicator requirement if it runs longer.
 
@@ -227,7 +236,7 @@ The dashboard also shows simple aggregate stats over the 3-month window: the num
 
 ### 6.1 In Scope
 **Must-have**
-- Meal input & Estimation Pipeline (photo + text, retry-on-insufficient-detail, timestamping, photo discard).
+- Meal input & Estimation Pipeline (photo + text, retry-on-insufficient-detail, timestamping, photo discard, ephemeral photo preview during estimation).
 - Calorie Budget & Recommendation Engine (classification, time-of-day windows, Over-Target override).
 - Daily Target & Day Boundary (user-set target with default, 5am-to-next-5am local-timezone Day per FR-14).
 - Dietary Preference driving Recommendation content.

@@ -42,6 +42,7 @@ FR-21: The system displays an in-app notice instructing users to upload meal pho
 FR-22: User can view a dashboard showing, for each day in the last 3 months, total calories consumed against that day's Daily Calorie Target. Only days with at least one logged Entry show data. (Could-have.)
 FR-23: The dashboard also shows simple aggregate stats over the 3-month window: number/percentage of days within target vs. over target, and average daily calories consumed. (Could-have.)
 FR-24: User can log out of the application, ending their current session. After logout, no authenticated page (Daily view, Preferences, Trends) is accessible until logging back in.
+FR-25: For a photo Entry, user sees a preview of the photo they just uploaded, from the moment it's picked through to when the estimate result is shown (in-progress, success, and retry states) — ephemeral to the current submission attempt only, not persisted anywhere.
 
 ### NonFunctional Requirements
 
@@ -142,6 +143,7 @@ FR-21: Epic 2 - Meal-photo-only guidance (lives on the photo-capture screen in t
 FR-22: Epic 5 - 3-month trend view
 FR-23: Epic 5 - Trend summary stats
 FR-24: Epic 1 - Logout
+FR-25: Epic 2 - Photo preview during estimation
 
 ## Epic List
 
@@ -154,8 +156,8 @@ Users can create an account, log in, log out, and have their Daily Calorie Targe
 **FRs covered:** FR-13, FR-19, FR-20, FR-24
 
 ### Epic 2: Meal Logging & Estimation
-Users can submit an Entry by photo or text and get it estimated, classified into a stored record, timestamped, with the photo discarded after analysis. Complete and demoable on its own — it records what was eaten and its estimated calories, without yet computing a running budget or recommending anything.
-**FRs covered:** FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-21
+Users can submit an Entry by photo or text and get it estimated, classified into a stored record, timestamped, with the photo discarded after analysis, and see a preview of a submitted photo while it's estimated. Complete and demoable on its own — it records what was eaten and its estimated calories, without yet computing a running budget or recommending anything.
+**FRs covered:** FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-21, FR-25
 
 ### Epic 3: Calorie Budget & Recommendation Engine
 Builds on Epic 2's stored Entries: classifies each as Meal vs. Snack/Beverage, computes the Remaining Calorie Budget for the Day, and returns Recommendation(s) per remaining Meal Slot — including the Over-Target override. Completes FR-9's full per-submission response (calories + budget + recommendations) promised in the PRD's Vision.
@@ -349,7 +351,7 @@ So that I can end my session on a shared or borrowed device.
 
 ## Epic 2: Meal Logging & Estimation
 
-Users can submit an Entry by photo or text and get it estimated, classified into a stored record, timestamped, with the photo discarded after analysis. Complete and demoable on its own — it records what was eaten and its estimated calories, without yet computing a running budget or recommending anything.
+Users can submit an Entry by photo or text and get it estimated, classified into a stored record, timestamped, with the photo discarded after analysis, and see a preview of a submitted photo while it's estimated. Complete and demoable on its own — it records what was eaten and its estimated calories, without yet computing a running budget or recommending anything.
 
 ### Story 2.1: Log a Meal via Text
 
@@ -459,6 +461,33 @@ So that I'm not left wondering if anything is happening.
 **Given** the in-progress indicator resolves (success, retry, or hard failure)
 **When** the state changes
 **Then** the new state's message is likewise announced, not just visually swapped
+
+### Story 2.6: Photo Preview During Estimation
+
+As a user,
+I want to see a preview of the photo I just uploaded while it's being estimated,
+So that I can visually confirm what I submitted and what my estimate is based on.
+
+**Acceptance Criteria:**
+
+**Given** I pick a photo via "Add Photo"
+**When** the dialog opens
+**Then** I see a preview of that exact photo immediately — covering the client-side preparing/compressing phase, the in-progress "Estimating…" state, the success confirmation, and a retry prompt if one is shown — the preview never disappears and reappears partway through (FR-25)
+
+**Given** the photo is estimated successfully
+**When** the "Logged — about N calories" confirmation is shown
+**Then** the preview remains visible alongside it, so I can see exactly what was estimated (FR-25, FR-9)
+
+**Given** the photo needs a retry (insufficient detail, a hard estimation failure, or a client-side "too large" rejection)
+**When** the retry prompt appears
+**Then** the preview of the same photo remains visible alongside it, since it's the same photo that would be resubmitted (FR-4, FR-25)
+
+**Given** the dialog closes (success auto-close, or I close it myself)
+**When** it closes
+**Then** the preview is discarded along with the rest of the dialog's local state — it is never persisted, never sent to any new server endpoint, and never appears in the Entries list, on reload, or on another device (FR-25, does not change FR-6/AD-4)
+
+**Given** the preview is rendered
+**Then** it is built entirely from the photo file already in the browser's memory — no new network request or server-side storage is introduced for this story
 
 ## Epic 3: Calorie Budget & Recommendation Engine
 
