@@ -41,6 +41,7 @@ FR-20: User can create an account and log in via email and password. (Could-have
 FR-21: The system displays an in-app notice instructing users to upload meal photos only, to reduce the risk of accidentally uploading unrelated personal photos. (Could-have.)
 FR-22: User can view a dashboard showing, for each day in the last 3 months, total calories consumed against that day's Daily Calorie Target. Only days with at least one logged Entry show data. (Could-have.)
 FR-23: The dashboard also shows simple aggregate stats over the 3-month window: number/percentage of days within target vs. over target, and average daily calories consumed. (Could-have.)
+FR-24: User can log out of the application, ending their current session. After logout, no authenticated page (Daily view, Preferences, Trends) is accessible until logging back in.
 
 ### NonFunctional Requirements
 
@@ -140,6 +141,7 @@ FR-20: Epic 1 - Account creation and login
 FR-21: Epic 2 - Meal-photo-only guidance (lives on the photo-capture screen in the Log Entry flow)
 FR-22: Epic 5 - 3-month trend view
 FR-23: Epic 5 - Trend summary stats
+FR-24: Epic 1 - Logout
 
 ## Epic List
 
@@ -148,8 +150,8 @@ Global, feature-independent visual and interaction contracts (design tokens, cro
 **UX-DRs covered:** UX-DR1, UX-DR2, UX-DR3, UX-DR4, UX-DR25, UX-DR27, UX-DR28
 
 ### Epic 1: Account & Profile Setup
-Users can create an account, log in, and have their Daily Calorie Target and Dietary Preference captured — the foundation every other epic needs to attribute data to "this user, today."
-**FRs covered:** FR-13, FR-19, FR-20
+Users can create an account, log in, log out, and have their Daily Calorie Target and Dietary Preference captured — the foundation every other epic needs to attribute data to "this user, today."
+**FRs covered:** FR-13, FR-19, FR-20, FR-24
 
 ### Epic 2: Meal Logging & Estimation
 Users can submit an Entry by photo or text and get it estimated, classified into a stored record, timestamped, with the photo discarded after analysis. Complete and demoable on its own — it records what was eaten and its estimated calories, without yet computing a running budget or recommending anything.
@@ -225,7 +227,7 @@ So that the app feels predictable no matter which screen I'm on.
 
 ## Epic 1: Account & Profile Setup
 
-Users can create an account, log in, and have their Daily Calorie Target and Dietary Preference captured — the foundation every other epic needs to attribute data to "this user, today."
+Users can create an account, log in, log out, and have their Daily Calorie Target and Dietary Preference captured — the foundation every other epic needs to attribute data to "this user, today."
 
 ### Story 1.1: User Registration
 
@@ -321,6 +323,29 @@ So that I can navigate the app regardless of how I perceive it.
 
 **Given** any other icon-only control introduced by a later epic (e.g. a Trends navigation icon)
 **Then** the same rule applies — no icon-only control ships without an accessible name (UX-DR23)
+
+### Story 1.5: User Logout
+
+As a logged-in user,
+I want to log out of the application,
+So that I can end my session on a shared or borrowed device.
+
+**Acceptance Criteria:**
+
+**Given** I am logged in and viewing the Daily view
+**Then** I see a logout icon alongside the existing "View historical trends" and "Open account settings" icons in the header row — icon-only, carrying a text-equivalent accessible name (e.g. "Log out"), per Story 1.4's rule (UX-DR23, FR-24)
+
+**Given** I am logged in
+**When** I activate the logout icon
+**Then** my Supabase Auth session ends and I am redirected to the Login screen (FR-24)
+
+**Given** I have just logged out
+**When** I try to access any authenticated route (Daily view, Log Entry, Account/Preferences, Trends) directly — e.g. via the back button or a bookmark
+**Then** I am redirected to the Login screen by the same middleware session check Story 1.2 established (AD-3) — logout does not require its own separate route-guard logic
+
+**Given** I have logged out
+**When** I log back in
+**Then** I land on the Daily view exactly as any returning user would (Story 1.2) — logging out has no other lasting effect on my account or data
 
 ## Epic 2: Meal Logging & Estimation
 

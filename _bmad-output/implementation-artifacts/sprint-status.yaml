@@ -29,8 +29,8 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-25-2026 21:16'
-project: Calorie Tracker MVP
+last_updated: '09-25-2026 23:05'
+project: bmad-calorie-counter
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
@@ -45,6 +45,7 @@ development_status:
   1-2-user-login: done
   1-3-manage-daily-calorie-target-dietary-preference: done
   1-4-accessible-navigation-to-preferences: done
+  1-5-user-logout: backlog
   epic-1-retrospective: done
 
   epic-2: done
@@ -74,7 +75,6 @@ development_status:
   5-1-3-month-trend-view: done
   5-2-trend-summary-stats: done
   epic-5-retrospective: done
-
 action_items:
   - id: "epic-0-retro-item-1-fix-dialogcontent-missing-focus-visible"
     epic: 0
@@ -128,7 +128,7 @@ action_items:
     action: "Decide whether a logout affordance is in scope, and if so, spec it --
       never specified anywhere in planning"
     owner: "human decision needed first"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
   - id: "epic-1-retro-item-9-add-a-way-back-to-the-daily-view-from-pr"
     epic: 1

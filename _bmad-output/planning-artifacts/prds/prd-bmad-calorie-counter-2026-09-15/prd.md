@@ -2,7 +2,7 @@
 title: Calorie Tracker MVP
 status: final
 created: 2026-09-15
-updated: 2026-09-19
+updated: 2026-09-25
 ---
 
 # PRD: Calorie Tracker MVP
@@ -187,6 +187,13 @@ User can create an account and log in via email and password.
 #### FR-21: Meal-photo-only guidance
 System displays an in-app notice instructing users to upload meal photos only, to reduce the risk of accidentally uploading unrelated personal photos.
 
+#### FR-24: Logout
+Once logged in, user can log out of the application, ending their current session.
+
+**Consequences (testable):**
+- After logging out, the user can no longer access any authenticated page (Daily view, Preferences, Trends) — they're returned to the login screen and must log back in to resume.
+- `[ASSUMPTION: the logout action is reachable from every authenticated page (not just one screen), since there's no single "account" hub page in this app's IA to attach it to — exact placement is a UX decision, not specified further here.]`
+
 **Notes:**
 - `[NOTE FOR PM]` Daily Calorie Target and actual intake are personal, sensitive-feeling data even though not classic PII, and the credential system protecting them is squarely a target for data harvesting aimed at ad-targeting/marketing (the stated threat model), not just account takeover. Deprioritized to Could-have for this prototype, but should be revisited before any real users' data is involved. See §6.2 Out of Scope.
 
@@ -229,7 +236,7 @@ The dashboard also shows simple aggregate stats over the 3-month window: the num
 - First-Login Daily Engagement flow (remaining-budget prompt, decline-path recommendations, pre-10am breakfast offer, tone-adaptive message).
 
 **Could-have** *(include only if it doesn't add much build friction)*
-- Account creation & login (email/password).
+- Account creation, login, and logout (email/password).
 - Meal-photo-only in-app guidance.
 - Historical Trends Dashboard (3-month view + summary stats).
 
@@ -261,3 +268,4 @@ The dashboard also shows simple aggregate stats over the 3-month window: the num
 - §4.3 FR-13 — Account-creation screen suggests a standard adult daily intake value as a pre-filled starting point for the Daily Calorie Target, which the user can accept or change.
 - §4.3 FR-14 — Timezone is auto-detected from the browser/device; no manual override in MVP.
 - §4.5 FR-19 — Dietary Preference defaults to non-vegetarian until the user explicitly changes it.
+- §4.6 FR-24 — Logout is reachable from every authenticated page; exact placement is left to UX.
