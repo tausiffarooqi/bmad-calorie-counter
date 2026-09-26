@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-25-2026 19:30'
+last_updated: '09-25-2026 19:40'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -53,7 +53,7 @@ development_status:
   2-3-in-progress-failure-states: done
   2-4-view-logged-entries: done
   2-5-accessible-in-progress-announcement: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: done
 
   epic-3: done
   3-1-classify-entries-as-meal-or-snack-beverage: done
@@ -144,3 +144,49 @@ action_items:
     owner: "next dev session"
     status: open
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
+  - id: "epic-2-retro-item-11-make-the-server-respect-a-cancelled-abor"
+    epic: 2
+    action: "Make the server respect a cancelled/aborted submission -- forward the
+      request signal into GeminiAdapter.estimate() and check it before createEntry()
+      (app/api/entries/route.ts POST)"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-2026-09-25.md"
+  - id: "epic-2-retro-item-12-fix-the-first-entry-of-the-day-live-regi"
+    epic: 2
+    action: "Fix the first-Entry-of-the-day live-region mount bug -- render the <ul
+      aria-live> wrapper unconditionally in app/entries-list.tsx"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-2026-09-25.md"
+  - id: "epic-2-retro-item-13-make-closing-the-dialog-during-the-succe"
+    epic: 2
+    action: "Make closing the dialog during the success-confirmation window still
+      refresh the list (hooks/use-entry-submission.ts cancelAndReset/handleOpenChange)"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-2026-09-25.md"
+  - id: "epic-2-retro-item-14-cap-result-description-against-max_descr"
+    epic: 2
+    action: "Cap result.description against MAX_DESCRIPTION_LENGTH before createEntry()
+      in app/api/entries/route.ts (currently only the user-typed input is bounded,
+      not Gemins own generated text)"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-2026-09-25.md"
+  - id: "epic-2-retro-item-15-consolidate-the-two-confirmed-defense-in"
+    epic: 2
+    action: "Consolidate the two confirmed defense-in-depth-401-shows-inline-error-not-redirect
+      occurrences (/api/preferences from Epic 1, /api/entries from Epic 2) into one
+      shared client-side pattern"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-2026-09-25.md"
+  - id: "epic-2-retro-item-16-process-lesson-finally-do-the-holistic-d"
+    epic: 2
+    action: "Process lesson: finally do the holistic Daily-view live-region pass --
+      5 separate deferred-work.md entries across 5 stories have each re-deferred this
+      without consolidation"
+    owner: "human decision needed first"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-2026-09-25.md"
