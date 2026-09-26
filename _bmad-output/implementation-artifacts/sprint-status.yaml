@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-25-2026 19:15'
+last_updated: '09-25-2026 19:30'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -45,7 +45,7 @@ development_status:
   1-2-user-login: done
   1-3-manage-daily-calorie-target-dietary-preference: done
   1-4-accessible-navigation-to-preferences: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   epic-2: done
   2-1-log-a-meal-via-text: done
@@ -90,13 +90,57 @@ action_items:
     ref: "_bmad-output/implementation-artifacts/epic-0-retro-2026-09-25.md"
   - id: "epic-0-retro-item-3-reconcile-ux-dr27-against-stories-4-1-4"
     epic: 0
-    action: "Reconcile UX-DR27 against Stories 4.1+4.4 combined rendering (up to 4 buttons on first-login screen)"
+    action: "Reconcile UX-DR27 against Stories 4.1+4.4 combined rendering (up to 4
+      buttons on first-login screen)"
     owner: "human decision needed first"
     status: open
     ref: "_bmad-output/implementation-artifacts/epic-0-retro-2026-09-25.md"
   - id: "epic-0-retro-item-4-document-outline-none-focus-visible-ring"
     epic: 0
-    action: "Document outline-none / focus-visible:ring-* pairing requirement in DESIGN.md or AGENTS.md"
+    action: "Document outline-none / focus-visible:ring-* pairing requirement in DESIGN.md
+      or AGENTS.md"
     owner: "whoever picks up the dialog fix"
     status: open
     ref: "_bmad-output/implementation-artifacts/epic-0-retro-2026-09-25.md"
+  - id: "epic-1-retro-item-5-clear-the-session-cookie-on-registration"
+    epic: 1
+    action: "Clear the session cookie on registration rollback (app/api/auth/register/route.ts
+      createProfile failure branch)"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
+  - id: "epic-1-retro-item-6-enforce-max_daily_calorie_target-client"
+    epic: 1
+    action: "Enforce MAX_DAILY_CALORIE_TARGET client-side on Register (app/(routes)/register/page.tsx
+      handleSubmit)"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
+  - id: "epic-1-retro-item-7-add-next-deep-link-preservation-across-t"
+    epic: 1
+    action: "Add ?next= deep-link preservation across the login redirect (proxy.ts
+      + login/page.tsx) -- Story 1.2s own deferred revisit condition has now occurred"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
+  - id: "epic-1-retro-item-8-decide-whether-a-logout-affordance-is-in"
+    epic: 1
+    action: "Decide whether a logout affordance is in scope, and if so, spec it --
+      never specified anywhere in planning"
+    owner: "human decision needed first"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
+  - id: "epic-1-retro-item-9-add-a-way-back-to-the-daily-view-from-pr"
+    epic: 1
+    action: "Add a way back to the Daily view from /preferences and /trends (one shared
+      nav affordance)"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
+  - id: "epic-1-retro-item-10-remove-or-update-the-stale-temporary-fou"
+    epic: 1
+    action: "Remove or update the stale Temporary foundation showcase for Epic 0 comment
+      in app/page.tsx:14"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-09-25.md"
