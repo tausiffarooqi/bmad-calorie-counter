@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-25-2026 19:40'
+last_updated: '09-25-2026 19:50'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -61,7 +61,7 @@ development_status:
   3-3-meal-slot-recommendations-by-time-of-day: done
   3-4-after-10pm-conditional-recommendation: done
   3-5-over-target-override: done
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
 
   epic-4: done
   4-1-first-login-prompt-remaining-budget: done
@@ -190,3 +190,35 @@ action_items:
     owner: "human decision needed first"
     status: open
     ref: "_bmad-output/implementation-artifacts/epic-2-retro-2026-09-25.md"
+  - id: "epic-3-retro-item-17-decide-how-to-handle-meal-types-the-clas"
+    epic: 3
+    action: "Decide how to handle meal types the classifier identifies by keyword
+      but the recommendation engine does not model as slots -- a real breakfast entry
+      silently consumes the lunch slot position (MEAL_KEYWORDS includes breakfast,
+      slot-fill is purely positional)"
+    owner: "human decision needed first"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-09-25.md"
+  - id: "epic-3-retro-item-18-make-gets-missing-profile-handling-in-ap"
+    epic: 3
+    action: "Make GETs missing-profile handling in app/api/entries/route.ts degrade
+      gracefully (return entries, omit budget/recommendations) instead of failing
+      the whole response, matching POSTs own precedent in the same file"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-09-25.md"
+  - id: "epic-3-retro-item-19-give-the-remaining-calorie-budget-number"
+    epic: 3
+    action: "Give the Remaining Calorie Budget number its own explicit failure state
+      distinct from the cold-load skeleton, matching EntriesLists existing alert treatment
+      for the same loadError condition"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-09-25.md"
+  - id: "epic-3-retro-item-20-export-a-shared-local-hour-helper-from-d"
+    epic: 3
+    action: "Export a shared local-hour helper from day-boundary.ts and have recommendation-engine.ts
+      import it instead of maintaining an independent copy"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-09-25.md"
