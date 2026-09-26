@@ -270,11 +270,6 @@ export default function Home() {
           </div>
         </>
       )}
-      {/* Plain, non-shadcn interactive element — proves the global
-          :focus-visible rule (Story 0.2) applies beyond Button. */}
-      <a href="#" className="text-sm text-primary underline-offset-4 hover:underline">
-        Log in
-      </a>
     </div>
   );
 }

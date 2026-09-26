@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-25-2026 20:12'
+last_updated: '09-25-2026 20:46'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -80,13 +80,13 @@ action_items:
     epic: 0
     action: "Fix DialogContent missing focus-visible indicator (components/ui/dialog.tsx:64)"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-0-retro-2026-09-25.md"
   - id: "epic-0-retro-item-2-remove-dead-demo-link-app-page-tsx-275-2"
     epic: 0
     action: "Remove dead demo link app/page.tsx:275-277 (Log in, href=#)"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-0-retro-2026-09-25.md"
   - id: "epic-0-retro-item-3-reconcile-ux-dr27-against-stories-4-1-4"
     epic: 0
@@ -100,7 +100,7 @@ action_items:
     action: "Document outline-none / focus-visible:ring-* pairing requirement in DESIGN.md
       or AGENTS.md"
     owner: "whoever picks up the dialog fix"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-0-retro-2026-09-25.md"
   - id: "epic-1-retro-item-5-clear-the-session-cookie-on-registration"
     epic: 1

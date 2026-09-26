@@ -143,6 +143,8 @@ Inherits shadcn defaults unchanged for: `Input`, `Dialog`, `Tabs`, `Avatar`, `Se
 - **Retry prompt** — same shape as Prompt card but with a `{colors.primary}` border, signaling "this needs a response from you" without using an alarm color.
 - **Photo-only notice** — no card treatment at all: small (12px) `{colors.muted-foreground}` text, sitting quietly near the Add Photo action rather than boxed or bordered. It's ambient guidance, not a warning.
 
+**Interactive primitives and focus rings.** The app's global `:focus-visible` rule (Story 0.2) lives in `@layer base`, and Tailwind's own layer order (`theme, base, components, utilities`) means it can never win against any element that also carries the `outline-none` utility — the reset every shadcn-derived interactive primitive in this codebase uses. Concretely: `Button`, `Input`, and `RadioGroupItem` each pair `outline-none` with their own `focus-visible:ring-*` classes, so they show a working clay ring; any new interactive primitive that copies the `outline-none` reset *without* also adding its own `focus-visible:ring-*` fallback will render with **no visible keyboard-focus indicator at all** — found and fixed once already for `DialogContent` (Epic 0 retrospective). Any future interactive component must supply its own `focus-visible:ring-*` (or equivalent) rather than relying on the global rule to reach it.
+
 ## Do's and Don'ts
 
 | Do | Don't |
