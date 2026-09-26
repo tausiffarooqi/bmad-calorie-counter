@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '2026-09-25'
+last_updated: '09-25-2026 19:15'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -38,7 +38,7 @@ development_status:
   epic-0: done
   0-1-design-tokens-visual-foundation: done
   0-2-cross-cutting-interaction-accessibility-primitives: done
-  epic-0-retrospective: optional
+  epic-0-retrospective: done
 
   epic-1: done
   1-1-user-registration: done
@@ -74,3 +74,29 @@ development_status:
   5-1-3-month-trend-view: done
   5-2-trend-summary-stats: done
   epic-5-retrospective: optional
+
+action_items:
+  - id: "epic-0-retro-item-1-fix-dialogcontent-missing-focus-visible"
+    epic: 0
+    action: "Fix DialogContent missing focus-visible indicator (components/ui/dialog.tsx:64)"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-0-retro-2026-09-25.md"
+  - id: "epic-0-retro-item-2-remove-dead-demo-link-app-page-tsx-275-2"
+    epic: 0
+    action: "Remove dead demo link app/page.tsx:275-277 (Log in, href=#)"
+    owner: "next dev session"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-0-retro-2026-09-25.md"
+  - id: "epic-0-retro-item-3-reconcile-ux-dr27-against-stories-4-1-4"
+    epic: 0
+    action: "Reconcile UX-DR27 against Stories 4.1+4.4 combined rendering (up to 4 buttons on first-login screen)"
+    owner: "human decision needed first"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-0-retro-2026-09-25.md"
+  - id: "epic-0-retro-item-4-document-outline-none-focus-visible-ring"
+    epic: 0
+    action: "Document outline-none / focus-visible:ring-* pairing requirement in DESIGN.md or AGENTS.md"
+    owner: "whoever picks up the dialog fix"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-0-retro-2026-09-25.md"
