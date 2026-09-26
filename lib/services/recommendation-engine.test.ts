@@ -428,3 +428,22 @@ test("isBreakfastOfferWindow is false in the afternoon", () => {
   const now = new Date("2026-01-15T15:00:00Z"); // 15:00 UTC
   assert.equal(isBreakfastOfferWindow(now, TZ), false);
 });
+
+// Epic 4 retro action item: midnight-5am is excluded even though it's
+// "before 10am" — those hours belong to the after-10pm/before-5am
+// Recommendation window, which never reads breakfastOffered at all, so an
+// acceptance here could never produce a breakfast Recommendation on any Day.
+test("isBreakfastOfferWindow is false just after midnight local", () => {
+  const now = new Date("2026-01-15T00:30:00Z"); // 00:30 UTC
+  assert.equal(isBreakfastOfferWindow(now, TZ), false);
+});
+
+test("isBreakfastOfferWindow is false just before 5am local", () => {
+  const now = new Date("2026-01-15T04:59:00Z");
+  assert.equal(isBreakfastOfferWindow(now, TZ), false);
+});
+
+test("isBreakfastOfferWindow is true at exactly 5am local", () => {
+  const now = new Date("2026-01-15T05:00:00Z");
+  assert.equal(isBreakfastOfferWindow(now, TZ), true);
+});

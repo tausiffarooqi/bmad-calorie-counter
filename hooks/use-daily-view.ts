@@ -41,7 +41,21 @@ export function useDailyView(refreshKey: number) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [remainingBudget, setRemainingBudget] = useState<number | undefined>(undefined);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [showFirstLoginPrompt, setShowFirstLoginPrompt] = useState(false);
+  // Epic 4 retro action item: latches "the First-Login prompt was shown
+  // this session" the first time a fetch's `showFirstLoginPrompt` comes
+  // back true, instead of exposing that raw one-shot server flag directly.
+  // `checkAndMarkFirstLoginPrompt()` (profiles.ts) only ever returns `true`
+  // on the Day's very first GET — accepting the (unrelated) breakfast offer
+  // bumps `refreshKey` too, forcing a second GET that legitimately comes
+  // back `false`, which was silently collapsing the still-open prompt (and
+  // Story 4.2's tone message with it) in app/page.tsx even though the user
+  // never touched either of the prompt's own two buttons. Set inside this
+  // hook's own fetch-resolution callback below — the standard "setState in
+  // response to an external system's update" data-fetching pattern, not a
+  // derived effect reacting to already-rendered state — so once latched
+  // `true`, only app/page.tsx's own `promptDismissed` (set by those two
+  // buttons) or a real `entries.length > 0` can hide the prompt again.
+  const [promptShownThisSession, setPromptShownThisSession] = useState(false);
   const [toneMessage, setToneMessage] = useState<string | undefined>(undefined);
   const [breakfastOfferAccepted, setBreakfastOfferAccepted] = useState(false);
   const [showBreakfastOffer, setShowBreakfastOffer] = useState(false);
@@ -99,7 +113,9 @@ export function useDailyView(refreshKey: number) {
       setEntries(result.entries ?? []);
       setRemainingBudget(result.remainingBudget);
       setRecommendations(result.recommendations ?? []);
-      setShowFirstLoginPrompt(result.showFirstLoginPrompt ?? false);
+      if (result.showFirstLoginPrompt) {
+        setPromptShownThisSession(true);
+      }
       setToneMessage(result.toneMessage);
       setBreakfastOfferAccepted(result.breakfastOfferAccepted ?? false);
       setShowBreakfastOffer(result.showBreakfastOffer ?? false);
@@ -116,7 +132,7 @@ export function useDailyView(refreshKey: number) {
     entries,
     remainingBudget,
     recommendations,
-    showFirstLoginPrompt,
+    promptShownThisSession,
     toneMessage,
     breakfastOfferAccepted,
     showBreakfastOffer,

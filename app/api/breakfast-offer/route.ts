@@ -4,7 +4,11 @@ import { acceptBreakfastOffer, getProfile } from "@/lib/services/profiles";
 import { dayBoundary, isValidTimeZone } from "@/lib/services/day-boundary";
 import { getEntriesForDay } from "@/lib/services/entries";
 import { computeRemainingBudget } from "@/lib/services/budget-engine";
-import { isBreakfastOfferWindow } from "@/lib/services/recommendation-engine";
+import {
+  hasLoggedMeal,
+  isBreakfastOfferWindow,
+  toRecommendationEntries,
+} from "@/lib/services/recommendation-engine";
 
 // Story 4.4's new accept endpoint (Code Map) — thin POST handler, no
 // GET/DELETE. Accepting the offer is the only thing this route does; a
@@ -67,23 +71,19 @@ export async function POST(request: Request) {
   // today's entries + profile the same way GET /api/entries does (no
   // pre-fetched profile is available in this standalone route) so this check
   // uses the same `remainingBudget` computation as everywhere else
-  // (AD-6/budget-engine.ts single source of truth).
+  // (AD-6/budget-engine.ts single source of truth). Hoisted out of the try
+  // block (mirrors GET /api/entries's own `let rows; let profile;` pattern)
+  // so the eligibility checks below and acceptBreakfastOffer() further down
+  // can both reuse this one fetch, rather than re-fetching (Epic 4 retro
+  // action item).
+  let rows;
+  let profile;
   try {
     const { start, end } = dayBoundary(now, tz);
-    const [rows, profile] = await Promise.all([
+    [rows, profile] = await Promise.all([
       getEntriesForDay(user.id, start, end),
       getProfile(user.id),
     ]);
-
-    if (!profile) {
-      console.error(`No profile found for authenticated user ${user.id}`);
-      return NextResponse.json({ ok: false, reason: "not_offered" });
-    }
-
-    const remainingBudget = computeRemainingBudget(profile.dailyCalorieTarget, rows);
-    if (!isBreakfastOfferWindow(now, tz) || remainingBudget < 0) {
-      return NextResponse.json({ ok: false, reason: "not_offered" });
-    }
   } catch (error) {
     console.error("Failed to verify breakfast offer eligibility:", error);
     return NextResponse.json(
@@ -97,8 +97,35 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!profile) {
+    console.error(`No profile found for authenticated user ${user.id}`);
+    return NextResponse.json({ ok: false, reason: "not_offered" });
+  }
+
+  const remainingBudget = computeRemainingBudget(profile.dailyCalorieTarget, rows);
+  // Epic 4 retro action item: this block previously never checked
+  // rows/classification at all, unlike GET /api/entries's own
+  // `showBreakfastOffer` (`!hasLoggedMeal(...)`, same shared rule as
+  // getRecommendations()'s "only Meal-classified Entries count") — a stale
+  // client (a backgrounded tab, a second device, or a direct API call)
+  // could otherwise still persist an accept after a Meal was already logged
+  // for the Day, exactly the state the card's own visibility rule is meant
+  // to keep unreachable.
+  if (
+    !isBreakfastOfferWindow(now, tz) ||
+    remainingBudget < 0 ||
+    hasLoggedMeal(toRecommendationEntries(rows))
+  ) {
+    return NextResponse.json({ ok: false, reason: "not_offered" });
+  }
+
   try {
-    await acceptBreakfastOffer(user.id, now, tz);
+    // Threads this handler's own already-fetched `profile` (Epic 4 retro
+    // action item) instead of acceptBreakfastOffer() re-fetching internally
+    // — that internal fetch became a pure, avoidable extra DB round-trip
+    // once this route started fetching `profile` for the eligibility check
+    // above.
+    await acceptBreakfastOffer(user.id, profile.breakfastOfferAcceptedAt, now, tz);
   } catch (error) {
     console.error("Failed to accept breakfast offer:", error);
     return NextResponse.json(

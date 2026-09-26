@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-25-2026 21:05'
+last_updated: '09-25-2026 21:12'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -228,14 +228,14 @@ action_items:
       collapsing the still-open First-Login prompt -- latch shown-this-session instead
       of re-deriving from the one-shot server flag on every fetch"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-4-retro-2026-09-25.md"
   - id: "epic-4-retro-item-22-make-the-breakfast-offer-accept-endpoint"
     epic: 4
     action: "Make the breakfast-offer accept endpoints eligibility check verify entries/classification
       the same way GET /api/entries showBreakfastOffer does"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-4-retro-2026-09-25.md"
   - id: "epic-4-retro-item-23-make-showbreakfastoffers-gate-classifica"
     epic: 4
@@ -243,21 +243,21 @@ action_items:
       entries should hide it), matching getRecommendations own rule, instead of the
       coarser rows.length===0"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-4-retro-2026-09-25.md"
   - id: "epic-4-retro-item-24-exclude-midnight-5am-from-isbreakfastoff"
     epic: 4
     action: "Exclude midnight-5am from isBreakfastOfferWindow so the offer is never
       shown/acceptable during hours where accepting it can never produce a recommendation"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-4-retro-2026-09-25.md"
   - id: "epic-4-retro-item-25-thread-the-already-fetched-profile-into"
     epic: 4
     action: "Thread the already-fetched profile into acceptBreakfastOffer() instead
       of an internal re-fetch, and correct its now-stale comment"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-4-retro-2026-09-25.md"
   - id: "epic-5-retro-item-26-fix-the-trends-date-range-label-derive-e"
     epic: 5

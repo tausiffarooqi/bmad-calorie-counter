@@ -9,13 +9,17 @@ import {
   breakfastOfferAcceptedToday,
 } from "@/lib/services/profiles";
 import { computeRemainingBudget } from "@/lib/services/budget-engine";
-import { getRecommendations, isBreakfastOfferWindow } from "@/lib/services/recommendation-engine";
+import {
+  getRecommendations,
+  hasLoggedMeal,
+  isBreakfastOfferWindow,
+  toRecommendationEntries,
+} from "@/lib/services/recommendation-engine";
 import { getToneMessageOutcome, TONE_MESSAGES } from "@/lib/services/tone-message";
 import { GeminiAdapter } from "@/lib/estimation/gemini-adapter";
 import type { EstimationInput } from "@/lib/estimation/types";
 import {
   MAX_DESCRIPTION_LENGTH,
-  type Classification,
   type DietaryPreference,
   type InputMode,
 } from "@/lib/constants";
@@ -31,21 +35,6 @@ import { MAX_PHOTO_BYTES } from "@/lib/compress-image";
 // this never hits an undefined case (Boundaries & Constraints).
 function toDietaryPreference(value: string): DietaryPreference {
   return value === "vegetarian" ? "vegetarian" : "non_vegetarian";
-}
-
-// `entries.classification` is likewise a plain `text` column — narrowed the
-// same explicit, defensive way as toDietaryPreference() above, for
-// getRecommendations()'s input. Every write path (createEntry(), called
-// only with entry-classifier.ts's Classification output — AD-1) already
-// guarantees only "meal"/"snack_beverage" ever lands there, so this is a
-// type-level narrowing of an already-guaranteed value, not new runtime
-// validation.
-function toRecommendationEntries(
-  rows: { classification: string }[]
-): { classification: Classification }[] {
-  return rows.map((row) => ({
-    classification: row.classification === "meal" ? "meal" : "snack_beverage",
-  }));
 }
 
 // The client (lib/compress-image.ts) only ever produces "image/jpeg" — this
@@ -521,11 +510,13 @@ export async function GET(request: Request) {
     // above, this one keeps its existing hard-fail behavior — a genuinely
     // failing pure function is a different, more surprising class of
     // problem than a row that simply isn't there.
+    const recommendationEntries = toRecommendationEntries(rows);
+
     try {
       recommendations = getRecommendations(
         now,
         tz,
-        toRecommendationEntries(rows),
+        recommendationEntries,
         toDietaryPreference(profile.dietaryPreference),
         remainingBudget,
         breakfastAccepted
@@ -544,15 +535,18 @@ export async function GET(request: Request) {
     // Offer card may reappear" row and the frozen Boundaries' "the two cards
     // ... resolve independently" clause (gating the second card on the first
     // card's own one-shot marker is itself a form of coupling the Boundaries
-    // forbid). `entries.length === 0` alone is what actually persists correctly
-    // across reloads within the same Day — never shown once a Meal/Snack is
-    // logged, never during Over-Target State (`remainingBudget >= 0`, Story
-    // 3.5's suppression reused as-is), and only before 10am
-    // (`isBreakfastOfferWindow`, recommendation-engine.ts's own centralized
-    // time-window decision, AD-6), and never once already accepted today
-    // (`!breakfastAccepted`).
+    // forbid). `!hasLoggedMeal(recommendationEntries)` (Epic 4 retro action
+    // item — previously the coarser `rows.length === 0`, copied from Story
+    // 4.1's unrelated log-a-meal prompt and inconsistent with
+    // getRecommendations()'s own "only Meal-classified Entries count" rule
+    // just above) persists correctly across reloads within the same Day —
+    // never shown once a Meal is logged, never during Over-Target State
+    // (`remainingBudget >= 0`, Story 3.5's suppression reused as-is), and
+    // only before 10am, never before 5am either (`isBreakfastOfferWindow`,
+    // recommendation-engine.ts's own centralized time-window decision,
+    // AD-6), and never once already accepted today (`!breakfastAccepted`).
     showBreakfastOffer =
-      rows.length === 0 &&
+      !hasLoggedMeal(recommendationEntries) &&
       remainingBudget >= 0 &&
       isBreakfastOfferWindow(now, tz) &&
       !breakfastAccepted;

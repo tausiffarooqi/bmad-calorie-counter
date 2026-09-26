@@ -19,6 +19,32 @@ export interface Recommendation {
   text: string;
 }
 
+// Narrows Entry rows' raw DB text column into the Classification union this
+// file's exported functions expect — every write path (createEntry(),
+// called only with entry-classifier.ts's Classification output, AD-1)
+// already guarantees only "meal"/"snack_beverage" ever lands there, so this
+// is a type-level narrowing of an already-guaranteed value, not new runtime
+// validation. Exported (Epic 4 retro action item) so every caller narrows
+// raw Entry rows identically instead of keeping its own copy — previously
+// duplicated privately in app/api/entries/route.ts.
+export function toRecommendationEntries(
+  rows: { classification: string }[]
+): { classification: Classification }[] {
+  return rows.map((row) => ({
+    classification: row.classification === "meal" ? "meal" : "snack_beverage",
+  }));
+}
+
+// Whether any Meal-classified Entry has already been logged for the Day —
+// the same rule getRecommendations()'s own filledCount uses below
+// (Snack/Beverage Entries never count). Shared here (Epic 4 retro action
+// item) so the breakfast-offer card's visibility (GET /api/entries) and its
+// accept endpoint's own eligibility check (POST /api/breakfast-offer) can
+// never disagree about what counts as "a meal already logged today".
+export function hasLoggedMeal(entries: { classification: Classification }[]): boolean {
+  return entries.some((entry) => entry.classification === "meal");
+}
+
 // Static, versioned lookup table (AD-8) — the same (slot, Dietary
 // Preference) key always returns identical text, on any day, forever; this
 // is expected, not a staleness bug, and copy must never imply per-Entry
@@ -155,10 +181,17 @@ export function getRecommendations(
 // (Code Map: "keeps every time-window decision centralized in this one
 // file", AD-6) — before 10am local, reusing this file's existing private
 // getLocalHour() rather than a second Intl.DateTimeFormat implementation.
-// Deliberately a strict "< 10", not the 5am-12pm range expectedSlotsForHour
-// uses for the Recommendation slots themselves — the offer card's own
-// window (Requirements & Constraints: "Only before 10am") is a distinct,
-// narrower window than the Meal Slot window it feeds into.
+// Also excludes midnight-5am (Epic 4 retro action item) — those hours
+// belong to the *same* Day (AD-5's 5am boundary), but
+// expectedSlotsForHour()'s after-10pm/before-5am branch never reads
+// `breakfastOffered` at all, so an acceptance in that window could never
+// produce a breakfast Recommendation on this Day or the next (whose own
+// Day-start is still ahead of the accepted timestamp) — a silent,
+// permanent no-op. Deliberately a 5-10 range, not the 5am-12pm range
+// expectedSlotsForHour uses for the Recommendation slots themselves — the
+// offer card's own window (Requirements & Constraints: "Only before 10am")
+// is a distinct, narrower window than the Meal Slot window it feeds into.
 export function isBreakfastOfferWindow(now: Date, tz: string): boolean {
-  return getLocalHour(now, tz) < 10;
+  const hour = getLocalHour(now, tz);
+  return hour >= MORNING_WINDOW_START_HOUR && hour < 10;
 }

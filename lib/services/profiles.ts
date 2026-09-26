@@ -96,30 +96,21 @@ export function breakfastOfferAcceptedToday(
 // Story 4.4's "accept the pre-10am breakfast offer" write — same
 // read-then-conditionally-write shape as checkAndMarkFirstLoginPrompt above
 // (single-user-at-a-time race accepted per that function's own existing
-// precedent). Unlike that function, this one's own internal `getProfile()`
-// call below is a necessary fetch, not an avoidable inefficiency: its only
-// caller (the new standalone POST route) never fetches a profile of its own
-// beforehand, so there's nothing to reuse — checkAndMarkFirstLoginPrompt can
-// take its profile fields from the caller's already-in-scope read, this
-// function cannot. No-op (returns false, no UPDATE issued) if already
-// accepted today — a decline is never persisted, only acceptance (Boundaries
-// & Constraints), and this function is never called for a decline.
+// precedent). Takes the caller's already-fetched `breakfastOfferAcceptedAt`
+// directly (Epic 4 retro action item) — the route's own eligibility check
+// now fetches `profile` via `Promise.all` before ever calling this
+// function, so an internal `getProfile()` re-fetch here would be a pure,
+// avoidable extra DB round-trip. No-op (returns false, no UPDATE issued) if
+// already accepted today — a decline is never persisted, only acceptance
+// (Boundaries & Constraints), and this function is never called for a
+// decline.
 export async function acceptBreakfastOffer(
   userId: string,
+  breakfastOfferAcceptedAt: Date | null,
   now: Date,
   tz: string
 ): Promise<boolean> {
-  const profile = await getProfile(userId);
-  if (!profile) {
-    // A missing profile row for an authenticated user indicates data
-    // corruption, not a normal state (mirrors entries/route.ts's identical
-    // guard/message) — logged so this is distinguishable from the benign
-    // "already accepted today" no-op below, which also returns `false`.
-    console.error(`No profile found for authenticated user ${userId}`);
-    return false;
-  }
-
-  if (breakfastOfferAcceptedToday(profile.breakfastOfferAcceptedAt, now, tz)) {
+  if (breakfastOfferAcceptedToday(breakfastOfferAcceptedAt, now, tz)) {
     return false;
   }
 

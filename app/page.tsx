@@ -32,7 +32,7 @@ export default function Home() {
     entries,
     remainingBudget,
     recommendations,
-    showFirstLoginPrompt,
+    promptShownThisSession,
     toneMessage,
     showBreakfastOffer,
     loadError,
@@ -101,9 +101,11 @@ export default function Home() {
   // (`loadError`) never shows the prompt with a stale/undefined budget.
   // Also requires `entries.length === 0` (amended Boundaries & Constraints)
   // — already-logged Entries for today (e.g. from another device/tab)
-  // must never be hidden behind the prompt.
+  // must never be hidden behind the prompt. Reads the hook's latched
+  // `promptShownThisSession` rather than a raw one-shot server flag (Epic 4
+  // retro action item) — see use-daily-view.ts for why.
   const showPrompt =
-    budgetReady && showFirstLoginPrompt && entries.length === 0 && !promptDismissed;
+    budgetReady && promptShownThisSession && entries.length === 0 && !promptDismissed;
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
