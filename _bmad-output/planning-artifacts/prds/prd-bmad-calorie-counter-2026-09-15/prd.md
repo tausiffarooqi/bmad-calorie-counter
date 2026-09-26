@@ -2,7 +2,7 @@
 title: Calorie Tracker MVP
 status: final
 created: 2026-09-15
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # PRD: Calorie Tracker MVP
@@ -92,6 +92,8 @@ For a photo Entry, user sees a preview of the photo they just uploaded, from the
 **Consequences (testable):**
 - The preview appears as soon as the photo is picked, before the estimate resolves, and remains visible continuously through the in-progress state (FR-9) and the success confirmation (estimated calories shown, FR-9) — it does not disappear partway through and reappear; it is present for the whole submission attempt, until the dialog closes.
 - If the Entry needs a retry (FR-4), the preview remains visible alongside the retry prompt too, since the same photo is what gets resubmitted.
+- Once the estimate succeeds, the dialog does not auto-close: the photo and its estimated calories remain on screen until the user explicitly closes the dialog (its existing close control) — no new UI element is introduced for this. This is specific to the photo-logging dialog; the text-logging dialog is unaffected and continues to auto-close shortly after a successful estimate, since there's no photo to keep showing.
+- The Entries list and Remaining Calorie Budget still update as soon as the estimate succeeds, whether or not the user has closed the dialog yet — the Entry is already durably saved at that point; only the dialog's own closing behavior changes, not when the rest of the app reflects the new Entry.
 - The preview is ephemeral to the current submission attempt only — it is not persisted anywhere and does not appear in the Entries list, a reload, or a different device.
 - This does not change FR-6: the photo is still discarded server-side after analysis and never written to disk, the database, or any storage bucket. The preview is rendered entirely from the file already in the browser's own memory, with no new server-side storage requirement.
 

@@ -476,13 +476,17 @@ So that I can visually confirm what I submitted and what my estimate is based on
 
 **Given** the photo is estimated successfully
 **When** the "Logged — about N calories" confirmation is shown
-**Then** the preview remains visible alongside it, so I can see exactly what was estimated (FR-25, FR-9)
+**Then** the preview remains visible alongside it, so I can see exactly what was estimated (FR-25, FR-9), and the dialog does not auto-close — the photo and the calorie estimate both stay on screen until I explicitly close the dialog myself (its existing close control; no new UI element)
 
 **Given** the photo needs a retry (insufficient detail, a hard estimation failure, or a client-side "too large" rejection)
 **When** the retry prompt appears
 **Then** the preview of the same photo remains visible alongside it, since it's the same photo that would be resubmitted (FR-4, FR-25)
 
-**Given** the dialog closes (success auto-close, or I close it myself)
+**Given** the photo is estimated successfully
+**When** the estimate resolves
+**Then** the Entries list and Remaining Calorie Budget update immediately, whether or not I've closed the dialog yet — the Entry is already durably saved at that point, and only the dialog's own closing behavior is deferred to my action, not the rest of the app reflecting the new Entry (FR-25)
+
+**Given** I explicitly close the dialog (its close control, Escape, or an overlay click) after a success, or after a retry/failure
 **When** it closes
 **Then** the preview is discarded along with the rest of the dialog's local state — it is never persisted, never sent to any new server endpoint, and never appears in the Entries list, on reload, or on another device (FR-25, does not change FR-6/AD-4)
 
