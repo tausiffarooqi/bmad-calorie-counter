@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "breakfast_offer_accepted_at" timestamp with time zone;

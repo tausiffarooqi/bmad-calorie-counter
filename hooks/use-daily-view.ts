@@ -20,6 +20,11 @@ interface EntriesApiResponse {
   // Story 4.2: omitted/undefined whenever `showFirstLoginPrompt` is false —
   // the server never computes it in that case (Boundaries & Constraints).
   toneMessage?: string;
+  // Story 4.4: whether today's pre-10am breakfast offer has already been
+  // accepted (active even outside the offer card's own window) and whether
+  // the offer card itself should render right now.
+  breakfastOfferAccepted?: boolean;
+  showBreakfastOffer?: boolean;
 }
 
 // Shared fetch for the Daily view — one call to `GET /api/entries` feeding
@@ -37,6 +42,8 @@ export function useDailyView(refreshKey: number) {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [showFirstLoginPrompt, setShowFirstLoginPrompt] = useState(false);
   const [toneMessage, setToneMessage] = useState<string | undefined>(undefined);
+  const [breakfastOfferAccepted, setBreakfastOfferAccepted] = useState(false);
+  const [showBreakfastOffer, setShowBreakfastOffer] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -86,6 +93,8 @@ export function useDailyView(refreshKey: number) {
       setRecommendations(result.recommendations ?? []);
       setShowFirstLoginPrompt(result.showFirstLoginPrompt ?? false);
       setToneMessage(result.toneMessage);
+      setBreakfastOfferAccepted(result.breakfastOfferAccepted ?? false);
+      setShowBreakfastOffer(result.showBreakfastOffer ?? false);
     }
 
     load();
@@ -101,6 +110,8 @@ export function useDailyView(refreshKey: number) {
     recommendations,
     showFirstLoginPrompt,
     toneMessage,
+    breakfastOfferAccepted,
+    showBreakfastOffer,
     loadError,
   };
 }

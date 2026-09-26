@@ -36,6 +36,13 @@
       "when": 1790315276745,
       "tag": "0004_regular_snowbird",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790381031825,
+      "tag": "0005_absent_ricochet",
+      "breakpoints": true
     }
   ]
 }

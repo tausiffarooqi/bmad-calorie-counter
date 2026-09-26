@@ -77,3 +77,56 @@ export async function checkAndMarkFirstLoginPrompt(
     .returning({ userId: profiles.userId });
   return rows.length > 0;
 }
+
+// Pure helper (Code Map) deciding whether today's pre-10am breakfast offer
+// has already been accepted — the same per-Day comparison against
+// `dayBoundary()`'s start as `checkAndMarkFirstLoginPrompt` uses above, no
+// separate/inline date math (Boundaries & Constraints, AD-5). Used by the
+// route both to decide the offer card's visibility and whether to pass
+// `breakfastOffered: true` into getRecommendations().
+export function breakfastOfferAcceptedToday(
+  breakfastOfferAcceptedAt: Date | null,
+  now: Date,
+  tz: string
+): boolean {
+  const { start } = dayBoundary(now, tz);
+  return breakfastOfferAcceptedAt !== null && breakfastOfferAcceptedAt >= start;
+}
+
+// Story 4.4's "accept the pre-10am breakfast offer" write — same
+// read-then-conditionally-write shape as checkAndMarkFirstLoginPrompt above
+// (single-user-at-a-time race accepted per that function's own existing
+// precedent). Unlike that function, this one's own internal `getProfile()`
+// call below is a necessary fetch, not an avoidable inefficiency: its only
+// caller (the new standalone POST route) never fetches a profile of its own
+// beforehand, so there's nothing to reuse — checkAndMarkFirstLoginPrompt can
+// take its profile fields from the caller's already-in-scope read, this
+// function cannot. No-op (returns false, no UPDATE issued) if already
+// accepted today — a decline is never persisted, only acceptance (Boundaries
+// & Constraints), and this function is never called for a decline.
+export async function acceptBreakfastOffer(
+  userId: string,
+  now: Date,
+  tz: string
+): Promise<boolean> {
+  const profile = await getProfile(userId);
+  if (!profile) {
+    // A missing profile row for an authenticated user indicates data
+    // corruption, not a normal state (mirrors entries/route.ts's identical
+    // guard/message) — logged so this is distinguishable from the benign
+    // "already accepted today" no-op below, which also returns `false`.
+    console.error(`No profile found for authenticated user ${userId}`);
+    return false;
+  }
+
+  if (breakfastOfferAcceptedToday(profile.breakfastOfferAcceptedAt, now, tz)) {
+    return false;
+  }
+
+  const rows = await db
+    .update(profiles)
+    .set({ breakfastOfferAcceptedAt: now })
+    .where(eq(profiles.userId, userId))
+    .returning({ userId: profiles.userId });
+  return rows.length > 0;
+}

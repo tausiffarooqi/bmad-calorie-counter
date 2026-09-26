@@ -21,6 +21,15 @@ export const profiles = pgTable("profiles", {
   // (lib/services/profiles.ts) is the only code path that reads or writes
   // it (AD-1).
   lastFirstLoginPromptAt: timestamp("last_first_login_prompt_at", { withTimezone: true }),
+  // Story 4.4's persisted "did the user accept today's pre-10am breakfast
+  // offer" signal — nullable, no default (null means "never accepted,"
+  // including every profile that existed before this column was added).
+  // Mirrors `lastFirstLoginPromptAt` exactly (Code Map). Only acceptance is
+  // ever written here — a decline is never persisted (Boundaries &
+  // Constraints). acceptBreakfastOffer()/breakfastOfferAcceptedToday()
+  // (lib/services/profiles.ts) are the only code paths that read or write
+  // it.
+  breakfastOfferAcceptedAt: timestamp("breakfast_offer_accepted_at", { withTimezone: true }),
 });
 
 export const entries = pgTable(

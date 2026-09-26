@@ -4,11 +4,14 @@
 // same convention as entry-classifier.ts.
 import type { Classification, DietaryPreference } from "../constants.ts";
 
-// The two Meal Slots this file implements — breakfast is Epic 4's (not
-// built here). Order matters: lunch always fills before dinner
-// (EXPERIENCE.md's own worked example, Design Notes).
+// The two Meal Slots this file always expects on their own — breakfast
+// (Story 4.4) is genuinely additive on top of these, never folded into this
+// constant itself: MEAL_SLOTS is referenced by its own test file, and this
+// codebase's convention is never to change an established exported shape's
+// meaning silently (Design Notes). Order matters: lunch always fills before
+// dinner (EXPERIENCE.md's own worked example, Design Notes).
 export const MEAL_SLOTS = ["lunch", "dinner"] as const;
-export type MealSlot = (typeof MEAL_SLOTS)[number];
+export type MealSlot = "breakfast" | (typeof MEAL_SLOTS)[number];
 
 export interface Recommendation {
   slot: MealSlot;
@@ -24,6 +27,13 @@ export interface Recommendation {
 // rather than producing an Over-Target-flavored card (Design Notes,
 // EXPERIENCE.md State Patterns).
 export const RECOMMENDATION_COPY: Record<MealSlot, Record<DietaryPreference, string>> = {
+  // Authored, no pre-approved example existed (Design Notes) — matches the
+  // existing lunch/dinner copy's register (short, concrete, one dish) and
+  // the "supportive, never prescriptive" tone already established.
+  breakfast: {
+    vegetarian: "Try a bowl of oatmeal with berries and a drizzle of honey.",
+    non_vegetarian: "Try scrambled eggs with whole-grain toast and avocado.",
+  },
   lunch: {
     vegetarian: "Try a chickpea salad bowl with a side of whole-grain pita.",
     non_vegetarian: "Try a grilled chicken salad bowl with a side of whole-grain pita.",
@@ -67,10 +77,18 @@ function getLocalHour(now: Date, tz: string): number {
 // Expected Meal Slots for the local hour (Boundaries & Constraints, I/O &
 // Edge-Case Matrix) — earliest slot first. The single function enforcing
 // every window's precedence (AD-6) — the after-10pm window (Story 3.4) is
-// covered here too, not by a separate implementation.
-function expectedSlotsForHour(hour: number, remainingBudget: number): readonly MealSlot[] {
+// covered here too, not by a separate implementation. `breakfastOffered`
+// (Story 4.4) only ever prepends "breakfast" within this one 5am-12pm
+// branch — the midday/evening branches below are untouched, so an
+// accepted-but-unlogged breakfast never carries past the morning window
+// (Boundaries & Constraints: "gets no special exemption").
+function expectedSlotsForHour(
+  hour: number,
+  remainingBudget: number,
+  breakfastOffered: boolean
+): readonly MealSlot[] {
   if (hour >= MORNING_WINDOW_START_HOUR && hour < MIDDAY_WINDOW_START_HOUR) {
-    return MEAL_SLOTS;
+    return breakfastOffered ? ["breakfast", ...MEAL_SLOTS] : MEAL_SLOTS;
   }
   if (hour >= MIDDAY_WINDOW_START_HOUR && hour < EVENING_WINDOW_END_HOUR) {
     return ["dinner"];
@@ -99,7 +117,14 @@ export function getRecommendations(
   tz: string,
   entries: { classification: Classification }[],
   dietaryPreference: DietaryPreference,
-  remainingBudget: number
+  remainingBudget: number,
+  // Story 4.4's new 6th argument — defaulted so all pre-existing call sites
+  // (and their test call sites) keep compiling unmodified (Boundaries &
+  // Constraints: "never a breaking signature change"). True only when
+  // today's pre-10am breakfast offer has already been accepted (the
+  // route's breakfastOfferAcceptedToday() helper) — additive on top of the
+  // existing lunch/dinner computation, never counted within it.
+  breakfastOffered: boolean = false
 ): Recommendation[] {
   // Over-Target State (Story 3.5, AD-6) — strictly negative `remainingBudget`
   // short-circuits to zero Recommendations, before any time-of-day window
@@ -114,7 +139,11 @@ export function getRecommendations(
     return [];
   }
 
-  const expectedSlots = expectedSlotsForHour(getLocalHour(now, tz), remainingBudget);
+  const expectedSlots = expectedSlotsForHour(
+    getLocalHour(now, tz),
+    remainingBudget,
+    breakfastOffered
+  );
 
   // Filled-slot count = Meal-classified Entries logged today only —
   // Snack/Beverage Entries never reduce it (Boundaries & Constraints:
@@ -131,4 +160,16 @@ export function getRecommendations(
     slot,
     text: RECOMMENDATION_COPY[slot][dietaryPreference],
   }));
+}
+
+// Story 4.4's own window check for the breakfast-offer card's visibility
+// (Code Map: "keeps every time-window decision centralized in this one
+// file", AD-6) — before 10am local, reusing this file's existing private
+// getLocalHour() rather than a second Intl.DateTimeFormat implementation.
+// Deliberately a strict "< 10", not the 5am-12pm range expectedSlotsForHour
+// uses for the Recommendation slots themselves — the offer card's own
+// window (Requirements & Constraints: "Only before 10am") is a distinct,
+// narrower window than the Meal Slot window it feeds into.
+export function isBreakfastOfferWindow(now: Date, tz: string): boolean {
+  return getLocalHour(now, tz) < 10;
 }

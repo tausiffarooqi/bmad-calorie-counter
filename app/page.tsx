@@ -7,7 +7,9 @@ import { LogEntryDialog } from "@/app/log-entry-dialog";
 import { LogPhotoDialog } from "@/app/log-photo-dialog";
 import { EntriesList } from "@/app/entries-list";
 import { FirstLoginPrompt } from "@/app/first-login-prompt";
+import { BreakfastOfferCard } from "@/app/breakfast-offer-card";
 import { useDailyView } from "@/hooks/use-daily-view";
+import { getClientTimeZone } from "@/lib/get-client-timezone";
 
 // Temporary foundation showcase for Epic 0 (UX Foundation). Exercises the
 // Muted Earth Editorial tokens (Story 0.1) and the global focus-visible
@@ -27,8 +29,15 @@ export default function Home() {
   // marked today's First-Login prompt shown" — the server-side write
   // already happened by the time this resolves (Boundaries & Constraints),
   // so nothing here writes anything back.
-  const { entries, remainingBudget, recommendations, showFirstLoginPrompt, toneMessage, loadError } =
-    useDailyView(refreshKey);
+  const {
+    entries,
+    remainingBudget,
+    recommendations,
+    showFirstLoginPrompt,
+    toneMessage,
+    showBreakfastOffer,
+    loadError,
+  } = useDailyView(refreshKey);
 
   // Local-only "the user already tapped one of the prompt's two buttons
   // this render" flag (Story 4.1 Code Map) — resolving is purely a
@@ -38,6 +47,33 @@ export default function Home() {
   // with `showFirstLoginPrompt: false` anyway, since the server already
   // marked it shown).
   const [promptDismissed, setPromptDismissed] = useState(false);
+
+  // Story 4.4: the breakfast-offer card's own local "declined this page
+  // session" flag — client-only, no persistence for decline (Boundaries &
+  // Constraints: "Do not persist a decline"), same reset-on-remount shape as
+  // `promptDismissed` above. Resolves independently of `promptDismissed` —
+  // accepting/declining one never depends on or blocks the other (Boundaries
+  // & Constraints).
+  const [breakfastOfferDismissed, setBreakfastOfferDismissed] = useState(false);
+
+  // Persists the acceptance server-side, then bumps `refreshKey` the same
+  // way the logging dialogs already do (Code Map: "no separate
+  // response-shape invention") so the next GET picks up the newly-active
+  // breakfast slot. A failed POST still resolves the card locally (falls
+  // through to bumpRefreshKey either way) — accepting is never a dead end,
+  // it just won't have persisted this time.
+  async function handleAcceptBreakfastOffer() {
+    try {
+      await fetch("/api/breakfast-offer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tz: getClientTimeZone() }),
+      });
+    } catch (error) {
+      console.error("Failed to accept breakfast offer:", error);
+    }
+    bumpRefreshKey();
+  }
 
   // The first fetch hasn't resolved (success or failure) yet — EXPERIENCE.md's
   // Cold-load State Pattern: a brief skeleton matching the eventual layout
@@ -129,6 +165,18 @@ export default function Home() {
               onResolve={() => setPromptDismissed(true)}
             />
           </div>
+          {/* Story 4.4: card 2, stacked below card 1 (mockup) — resolves
+              independently of the log-a-meal ask above (Boundaries &
+              Constraints: "the two cards ... resolve independently"), never
+              merged into one compound question. Same conditional expression
+              as the second render position below, just a different position
+              in the tree (Code Map). */}
+          {showBreakfastOffer && !breakfastOfferDismissed && (
+            <BreakfastOfferCard
+              onAccept={handleAcceptBreakfastOffer}
+              onDecline={() => setBreakfastOfferDismissed(true)}
+            />
+          )}
         </>
       ) : (
         <>
@@ -139,6 +187,17 @@ export default function Home() {
             />
           ) : (
             <EntriesList entries={entries} loadError={loadError} />
+          )}
+          {/* Story 4.4: second render position — the log-a-meal prompt has
+              already been dismissed (Key Flow: "a third card appears above
+              the other two"), so this is the same conditional expression as
+              the first position above, immediately before the Over-Target
+              banner/Recommendation-cards block (Code Map). */}
+          {showBreakfastOffer && !breakfastOfferDismissed && (
+            <BreakfastOfferCard
+              onAccept={handleAcceptBreakfastOffer}
+              onDecline={() => setBreakfastOfferDismissed(true)}
+            />
           )}
           {/* 0-2 real, data-driven Recommendation cards (Story 3.3) — one per
               still-open Meal Slot, lunch then dinner, replacing the old

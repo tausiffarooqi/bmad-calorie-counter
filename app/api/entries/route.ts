@@ -3,9 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { createEntry, getEntriesForDay } from "@/lib/services/entries";
 import { classify } from "@/lib/services/entry-classifier";
 import { dayBoundary, isValidTimeZone, previousDayBoundary } from "@/lib/services/day-boundary";
-import { getProfile, checkAndMarkFirstLoginPrompt } from "@/lib/services/profiles";
+import {
+  getProfile,
+  checkAndMarkFirstLoginPrompt,
+  breakfastOfferAcceptedToday,
+} from "@/lib/services/profiles";
 import { computeRemainingBudget } from "@/lib/services/budget-engine";
-import { getRecommendations } from "@/lib/services/recommendation-engine";
+import { getRecommendations, isBreakfastOfferWindow } from "@/lib/services/recommendation-engine";
 import { getToneMessageOutcome, TONE_MESSAGES } from "@/lib/services/tone-message";
 import { GeminiAdapter } from "@/lib/estimation/gemini-adapter";
 import type { EstimationInput } from "@/lib/estimation/types";
@@ -303,12 +307,16 @@ export async function POST(request: Request) {
       console.error(`No profile found for authenticated user ${user.id}`);
     } else {
       remainingBudget = computeRemainingBudget(freshProfile.dailyCalorieTarget, freshRows);
+      // Story 4.4: threads the same 6th argument POST's recompute would
+      // otherwise omit — using the just-fetched `freshProfile` above, no
+      // extra query (Code Map).
       recommendations = getRecommendations(
         now,
         tz,
         toRecommendationEntries(freshRows),
         toDietaryPreference(freshProfile.dietaryPreference),
-        remainingBudget
+        remainingBudget,
+        breakfastOfferAcceptedToday(freshProfile.breakfastOfferAcceptedAt, now, tz)
       );
     }
   } catch (error) {
@@ -458,6 +466,16 @@ export async function GET(request: Request) {
   // when negative (Over-Target, Story 3.5's concern to detect/style).
   const remainingBudget = computeRemainingBudget(profile.dailyCalorieTarget, rows);
 
+  // Story 4.4: computed from the already-fetched `profile.breakfastOfferAcceptedAt`
+  // + `now`/`tz` (no extra query) — used both to decide the offer card's own
+  // visibility below and as getRecommendations()'s new 6th argument (Code
+  // Map).
+  const breakfastAccepted = breakfastOfferAcceptedToday(
+    profile.breakfastOfferAcceptedAt,
+    now,
+    tz
+  );
+
   // Same `rows`/`profile` this handler already fetched above — no second
   // `entries` query (Code Map: "using the already-fetched rows/profile").
   // Wrapped in its own try/catch, same as every other fallible call in this
@@ -472,12 +490,35 @@ export async function GET(request: Request) {
       tz,
       toRecommendationEntries(rows),
       toDietaryPreference(profile.dietaryPreference),
-      remainingBudget
+      remainingBudget,
+      breakfastAccepted
     );
   } catch (error) {
     console.error("Failed to compute recommendations:", error);
     return entriesFetchFailedResponse();
   }
+
+  // Story 4.4 (amended — see spec's Spec Change Log): deliberately excludes
+  // `showFirstLoginPrompt` from this condition. That flag is one-shot-per-Day
+  // (`checkAndMarkFirstLoginPrompt` sets it `true` only on the Day's very
+  // first GET, `false` on every subsequent load), so ANDing on it made the
+  // offer card structurally unable to ever reappear on a reload — contradicting
+  // the frozen I/O matrix's "Decline, then reload same day before 10am ->
+  // Offer card may reappear" row and the frozen Boundaries' "the two cards
+  // ... resolve independently" clause (gating the second card on the first
+  // card's own one-shot marker is itself a form of coupling the Boundaries
+  // forbid). `entries.length === 0` alone is what actually persists correctly
+  // across reloads within the same Day — never shown once a Meal/Snack is
+  // logged, never during Over-Target State (`remainingBudget >= 0`, Story
+  // 3.5's suppression reused as-is), and only before 10am
+  // (`isBreakfastOfferWindow`, recommendation-engine.ts's own centralized
+  // time-window decision, AD-6), and never once already accepted today
+  // (`!breakfastAccepted`).
+  const showBreakfastOffer =
+    rows.length === 0 &&
+    remainingBudget >= 0 &&
+    isBreakfastOfferWindow(now, tz) &&
+    !breakfastAccepted;
 
   // Story 4.2: computed only when the First-Login prompt is already showing
   // (Boundaries & Constraints: "Do not compute or return this message when
@@ -530,5 +571,12 @@ export async function GET(request: Request) {
     recommendations,
     showFirstLoginPrompt,
     toneMessage,
+    // Story 4.4: `breakfastOfferAccepted` lets the client know the slot is
+    // active even outside the offer-card's own before-10am window (e.g. a
+    // reload at 11am the same Day, still within the 5am-12pm Recommendation
+    // window) — `showBreakfastOffer` is the card's own, narrower visibility
+    // decision (Code Map).
+    breakfastOfferAccepted: breakfastAccepted,
+    showBreakfastOffer,
   });
 }

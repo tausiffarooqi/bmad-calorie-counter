@@ -10,7 +10,11 @@
 // Run with: node --test lib/services/recommendation-engine.test.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { getRecommendations, RECOMMENDATION_COPY } from "./recommendation-engine.ts";
+import {
+  getRecommendations,
+  isBreakfastOfferWindow,
+  RECOMMENDATION_COPY,
+} from "./recommendation-engine.ts";
 
 const TZ = "UTC";
 
@@ -296,11 +300,13 @@ test("target met exactly during the morning window is unaffected by the Over-Tar
   assert.equal(result[1].slot, "dinner");
 });
 
-// Design Notes: "adds three more" — the lookup table has exactly 4 entries
-// (2 slots x 2 Dietary Preferences), each a non-empty string.
-test("the lookup table has exactly 4 populated entries", () => {
+// Design Notes: originally "adds three more" (2 slots x 2 Dietary
+// Preferences = 4); Story 4.4 adds a third slot (breakfast), so the lookup
+// table now has 6 entries (3 slots x 2 Dietary Preferences), each a
+// non-empty string.
+test("the lookup table has exactly 6 populated entries", () => {
   const slots = Object.keys(RECOMMENDATION_COPY);
-  assert.equal(slots.length, 2);
+  assert.equal(slots.length, 3);
   for (const slot of slots as Array<keyof typeof RECOMMENDATION_COPY>) {
     const byPreference = RECOMMENDATION_COPY[slot];
     assert.equal(Object.keys(byPreference).length, 2);
@@ -309,4 +315,116 @@ test("the lookup table has exactly 4 populated entries", () => {
       assert.ok(text.length > 0);
     }
   }
+});
+
+// Design Notes (Story 4.4): "Breakfast Recommendation copy (authored, no
+// pre-approved example exists)" — pins the exact authored text for both
+// Dietary Preferences, the same way the pre-existing lunch/dinner copy
+// tests pin their exact text.
+test("breakfast/vegetarian has the expected exact copy", () => {
+  assert.equal(
+    RECOMMENDATION_COPY.breakfast.vegetarian,
+    "Try a bowl of oatmeal with berries and a drizzle of honey."
+  );
+});
+
+test("breakfast/non_vegetarian has the expected exact copy", () => {
+  assert.equal(
+    RECOMMENDATION_COPY.breakfast.non_vegetarian,
+    "Try scrambled eggs with whole-grain toast and avocado."
+  );
+});
+
+// --- Story 4.4: Pre-10am Breakfast Offer ---------------------------------
+
+// I/O & Edge-Case Matrix: "Already accepted today, reloaded before logging
+// breakfast ... getRecommendations() includes breakfast as an open slot
+// alongside lunch/dinner". Genuinely additive, on top of (not counted
+// within) the existing 2-slot morning window — a third slot, earliest
+// (breakfast) first.
+test("breakfastOffered=true during the morning window adds breakfast ahead of lunch/dinner", () => {
+  const now = new Date("2026-01-15T08:00:00Z"); // 08:00 UTC
+  const result = getRecommendations(now, TZ, [], "non_vegetarian", 1500, true);
+  assert.deepEqual(result.map((r) => r.slot), ["breakfast", "lunch", "dinner"]);
+  assert.equal(result[0].text, RECOMMENDATION_COPY.breakfast.non_vegetarian);
+});
+
+// I/O & Edge-Case Matrix: "Accept, then log the breakfast Entry ... Breakfast
+// Recommendation disappears (slot filled); lunch/dinner unaffected" — the
+// existing positional filled-slot-count subtraction (Story 3.3) applies
+// unchanged; one logged Meal fills the earliest (breakfast) slot only.
+test("logging one Meal after accepting the breakfast offer fills only the breakfast slot", () => {
+  const now = new Date("2026-01-15T08:00:00Z"); // 08:00 UTC
+  const result = getRecommendations(
+    now,
+    TZ,
+    [{ classification: "meal" }],
+    "non_vegetarian",
+    1500,
+    true
+  );
+  assert.deepEqual(result.map((r) => r.slot), ["lunch", "dinner"]);
+});
+
+// Confirms the omitted (defaulted) 6th argument behaves identically to an
+// explicit `false` — the ~25 pre-existing call sites never pass it at all
+// (Boundaries & Constraints: "never a breaking signature change").
+test("omitting breakfastOffered behaves identically to passing false", () => {
+  const now = new Date("2026-01-15T08:00:00Z"); // 08:00 UTC
+  const omitted = getRecommendations(now, TZ, [], "non_vegetarian", 1500);
+  const explicitFalse = getRecommendations(now, TZ, [], "non_vegetarian", 1500, false);
+  assert.deepEqual(omitted, explicitFalse);
+  assert.deepEqual(omitted.map((r) => r.slot), ["lunch", "dinner"]);
+});
+
+// I/O & Edge-Case Matrix (Story 4.4): "Over-Target State ... No
+// breakfast-offer card, regardless of hour or acceptance state" — the
+// Over-Target short-circuit (Story 3.5) still fires before any window logic
+// runs, even when breakfastOffered is true.
+test("over target during the morning window returns no recommendations even when breakfastOffered", () => {
+  const now = new Date("2026-01-15T08:00:00Z"); // 08:00 UTC
+  const result = getRecommendations(now, TZ, [], "non_vegetarian", -50, true);
+  assert.deepEqual(result, []);
+});
+
+// I/O & Edge-Case Matrix (Story 4.4): "Past the 5am-12pm window, breakfast
+// accepted but never logged ... breakfast does not carry over into the
+// midday/evening windows — same as an unlogged lunch". The midday branch
+// (12pm-10pm) is untouched by breakfastOffered.
+test("breakfastOffered has no effect once the midday window has started", () => {
+  const now = new Date("2026-01-15T12:00:00Z"); // exactly 12pm UTC
+  const result = getRecommendations(now, TZ, [], "non_vegetarian", 1500, true);
+  assert.deepEqual(result.map((r) => r.slot), ["dinner"]);
+});
+
+// Same "no carryover" rule exercised in the after-10pm/before-5am window
+// (Story 3.4's merged window) — breakfastOffered still has no effect there
+// either.
+test("breakfastOffered has no effect during the after-10pm window", () => {
+  const now = new Date("2026-01-15T23:00:00Z"); // 23:00 UTC
+  const result = getRecommendations(now, TZ, [], "non_vegetarian", 300, true);
+  assert.deepEqual(result.map((r) => r.slot), ["dinner"]);
+});
+
+// isBreakfastOfferWindow() — the route's own visibility check for the
+// offer card, "hour < 10" (Code Map), distinct from the 5am-12pm
+// Recommendation window above.
+test("isBreakfastOfferWindow is true before 10am local", () => {
+  const now = new Date("2026-01-15T08:00:00Z"); // 08:00 UTC
+  assert.equal(isBreakfastOfferWindow(now, TZ), true);
+});
+
+test("isBreakfastOfferWindow is false at exactly 10am local", () => {
+  const now = new Date("2026-01-15T10:00:00Z"); // 10:00 UTC
+  assert.equal(isBreakfastOfferWindow(now, TZ), false);
+});
+
+test("isBreakfastOfferWindow is true just before 10am local", () => {
+  const now = new Date("2026-01-15T09:59:00Z");
+  assert.equal(isBreakfastOfferWindow(now, TZ), true);
+});
+
+test("isBreakfastOfferWindow is false in the afternoon", () => {
+  const now = new Date("2026-01-15T15:00:00Z"); // 15:00 UTC
+  assert.equal(isBreakfastOfferWindow(now, TZ), false);
 });
