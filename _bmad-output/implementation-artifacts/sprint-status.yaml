@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-25-2026 21:12'
+last_updated: '09-25-2026 21:16'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -265,21 +265,21 @@ action_items:
       of positional indexing, special-case a single-day window (no duplicated date),
       and reorder/annotate to match the day lists own most-recent-first direction"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-5-retro-2026-09-25.md"
   - id: "epic-5-retro-item-27-add-year-disambiguation-to-trends-format"
     epic: 5
     action: "Add year disambiguation to trends formatDayLabel() when the range spans
       a calendar-year boundary (not yet reachable, bundle with the label fix above)"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-5-retro-2026-09-25.md"
   - id: "epic-5-retro-item-28-extract-one-shared-hasdata-boolean-for-t"
     epic: 5
     action: "Extract one shared hasData boolean for the trends stats-block/day-list
       visibility gate instead of two independently-written conditions"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-5-retro-2026-09-25.md"
   - id: "epic-5-retro-item-29-re-prioritize-the-trends-target-reclassi"
     epic: 5

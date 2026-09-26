@@ -5,7 +5,7 @@
 // Run with: node --test lib/services/trends.test.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { computeTrendDays, computeTrendSummaryStats } from "./trends.ts";
+import { computeTrendDays, computeTrendSummaryStats, trendDateRange } from "./trends.ts";
 import type { TrendDay } from "./trends.ts";
 
 const TZ = "America/New_York";
@@ -190,4 +190,38 @@ test("summary stats: empty input degrades to all-zero stats, no division by zero
     percentOverTarget: 0,
     averageCalories: 0,
   });
+});
+
+function dayAt(dayStart: string): TrendDay {
+  return { dayStart, totalCalories: 0, dailyCalorieTarget: 2000 };
+}
+
+// Epic 5 retro action item: trendDateRange() derives earliest/latest by
+// value, not by trusting computeTrendDays()'s most-recent-first array
+// position — these fixtures are deliberately NOT in that sorted order, to
+// prove the function doesn't secretly depend on it anyway.
+test("trendDateRange finds earliest/latest by value, regardless of array order", () => {
+  const days = [
+    dayAt("2026-01-10T05:00:00.000Z"),
+    dayAt("2026-01-20T05:00:00.000Z"),
+    dayAt("2026-01-05T05:00:00.000Z"),
+  ];
+
+  assert.deepEqual(trendDateRange(days), {
+    earliest: "2026-01-05T05:00:00.000Z",
+    latest: "2026-01-20T05:00:00.000Z",
+  });
+});
+
+test("trendDateRange returns the same value twice for a single-day window", () => {
+  const days = [dayAt("2026-01-15T05:00:00.000Z")];
+
+  assert.deepEqual(trendDateRange(days), {
+    earliest: "2026-01-15T05:00:00.000Z",
+    latest: "2026-01-15T05:00:00.000Z",
+  });
+});
+
+test("trendDateRange returns undefined for an empty array", () => {
+  assert.equal(trendDateRange([]), undefined);
 });

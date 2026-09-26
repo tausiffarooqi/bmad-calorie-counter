@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getClientTimeZone } from "@/lib/get-client-timezone";
 import { isUnauthenticatedErrorBody, redirectToLogin } from "@/lib/handle-session-expiry";
-import { computeTrendSummaryStats, type TrendDay } from "@/lib/services/trends";
+import { computeTrendSummaryStats, trendDateRange, type TrendDay } from "@/lib/services/trends";
 import { BackToDailyViewLink } from "@/app/back-to-daily-view-link";
 
 interface TrendsApiResponse {
@@ -79,17 +79,40 @@ export default function TrendsPage() {
   // hasn't resolved (success or failure) yet.
   const firstLoadPending = days === undefined && !loadError;
 
-  // Story 5.2's aggregate stats, computed from the same `days` array the
+  // Epic 5 retro action item: the single computation the stats block, the
+  // day list, and their shared visibility gate all derive from — previously
+  // two independently hand-written boolean expressions
+  // (`!firstLoadPending && !loadError && stats && days && days.length > 0`
+  // vs. the same without `stats`) that happened to agree only coincidentally.
+  // Deriving both from this one `nonEmptyDays` value makes the epic's own
+  // "no stats block at all when the window is empty" rule structurally
+  // guaranteed rather than merely currently true (epic-5-context.md,
+  // Cross-Story Dependencies). Story 5.1's existing empty state below still
+  // covers `days.length === 0` unchanged.
+  const nonEmptyDays: TrendDay[] | undefined =
+    !firstLoadPending && !loadError && days && days.length > 0 ? days : undefined;
+
+  // Story 5.2's aggregate stats, computed from the same `nonEmptyDays` the
   // day-by-day list below already renders — reusing Story 5.1's "omit days
   // with no Entries" guarantee for free (an omitted day was never in `days`
-  // to begin with, Intent). Only computed once there's a non-empty window to
-  // summarize: reusing this exact `days.length > 0` condition (rather than a
-  // separate check) is what ties "no stats block at all when the window is
-  // empty" to the identical condition gating the day list itself, so the two
-  // can never disagree — Story 5.1's existing empty state covers
-  // `days.length === 0` unchanged, no separate empty state for stats
-  // (epic-5-context.md, Cross-Story Dependencies).
-  const stats = days && days.length > 0 ? computeTrendSummaryStats(days) : undefined;
+  // to begin with, Intent).
+  const stats = nonEmptyDays ? computeTrendSummaryStats(nonEmptyDays) : undefined;
+
+  // Epic 5 retro action item: derived by value (trendDateRange()), not by
+  // trusting `days[0]`/`days[days.length-1]`'s positional meaning across a
+  // file/story boundary with nothing enforcing it.
+  const dateRange = nonEmptyDays ? trendDateRange(nonEmptyDays) : undefined;
+
+  // A 3-month window spanning a calendar-year boundary would otherwise show
+  // a range like "Dec 28 – Feb 3" with no year on either end, ambiguous
+  // which year each date belongs to (Epic 5 retro action item; not yet
+  // reachable — this project's history starts September 2026 — but cheap to
+  // guard against while this code is already being touched). Applied to
+  // every `formatDayLabel()` call below, including each day-list row, so the
+  // header and the list never disagree about whether a year is shown.
+  const spansYearBoundary =
+    dateRange !== undefined &&
+    new Date(dateRange.earliest).getFullYear() !== new Date(dateRange.latest).getFullYear();
 
   return (
     <div className="flex flex-1 flex-col items-center gap-6 bg-background p-8 text-foreground">
@@ -127,7 +150,7 @@ export default function TrendsPage() {
           Interaction Patterns: "one linear reporting surface, not a widget
           dashboard"), and no color-coding for over-target (same "no
           alarm treatment" rule as the day list's own plain-text figures). */}
-      {!firstLoadPending && !loadError && stats && days && days.length > 0 && (
+      {nonEmptyDays && stats && dateRange && (
         <div
           aria-live="polite"
           aria-label="Trend summary"
@@ -136,10 +159,15 @@ export default function TrendsPage() {
           {/* Date range covered (Review finding) — `totalDays` counts only
               days with logged Entries, not the full calendar window, so
               stating the actual span avoids "M" being misread as "every day
-              in the last 3 months." `days` is most-recent-first (Story 5.1),
-              so the earliest day is the last element. */}
+              in the last 3 months." Epic 5 retro action item: a single-day
+              window shows one date instead of a duplicated range, and the
+              range reads latest-to-earliest (left to right) to match the
+              day list's own most-recent-first (top to bottom) direction,
+              instead of silently conflicting with it. */}
           <p className="text-label uppercase text-muted-foreground">
-            {formatDayLabel(days[days.length - 1].dayStart)} – {formatDayLabel(days[0].dayStart)}
+            {dateRange.earliest === dateRange.latest
+              ? formatDayLabel(dateRange.latest, spansYearBoundary)
+              : `${formatDayLabel(dateRange.latest, spansYearBoundary)} – ${formatDayLabel(dateRange.earliest, spansYearBoundary)}`}
           </p>
           <p>
             {stats.daysWithinTarget} of {stats.totalDays} {stats.totalDays === 1 ? "day" : "days"}{" "}
@@ -155,19 +183,21 @@ export default function TrendsPage() {
         </div>
       )}
 
-      {!firstLoadPending && !loadError && days && days.length > 0 && (
+      {nonEmptyDays && (
         <ul
           aria-live="polite"
           className="w-full max-w-sm list-none rounded-md border border-border bg-card"
         >
-          {days.map((day, index) => (
+          {nonEmptyDays.map((day, index) => (
             <li
               key={day.dayStart}
               className={`flex items-center justify-between gap-4 px-4 py-2.5 text-sm text-foreground ${
                 index > 0 ? "border-t border-border" : ""
               }`}
             >
-              <span className="min-w-0 truncate">{formatDayLabel(day.dayStart)}</span>
+              <span className="min-w-0 truncate">
+                {formatDayLabel(day.dayStart, spansYearBoundary)}
+              </span>
               {/* Plain text, no color-coding for within/over-target — the
                   "no alarm treatment" rule (Boundaries & Constraints,
                   Design Notes). */}
@@ -186,11 +216,15 @@ export default function TrendsPage() {
 // in the viewer's own local timezone via the browser's own Intl defaults,
 // consistent with every other user-facing date/time rendering in this app
 // (no separate calendar-date math here, just display formatting of an
-// already-Day-attributed instant).
-function formatDayLabel(dayStart: string): string {
+// already-Day-attributed instant). `includeYear` (Epic 5 retro action item)
+// disambiguates a window that spans a calendar-year boundary — applied
+// uniformly to the range label and every day-list row so they never
+// disagree about whether a year is shown.
+function formatDayLabel(dayStart: string, includeYear: boolean): string {
   return new Date(dayStart).toLocaleDateString(undefined, {
     weekday: "short",
     month: "short",
     day: "numeric",
+    ...(includeYear ? { year: "numeric" as const } : {}),
   });
 }

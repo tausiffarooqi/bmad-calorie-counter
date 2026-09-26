@@ -48,6 +48,32 @@ export function computeTrendDays(
   return days;
 }
 
+// The display date range for a set of TrendDay rows — derived by value (min/
+// max of `dayStart`), not by array position (Epic 5 retro action item):
+// computeTrendDays()'s most-recent-first sort order means `days[0]`/
+// `days[days.length-1]` happen to be latest/earliest today, but that's a
+// fact recorded only in a comment there, not a contract this function
+// depends on — a future change to that sort order can never silently
+// invert this range. Undefined for an empty array — callers already gate
+// on a non-empty `days` before rendering any range (Story 5.2's own "no
+// stats block when the window is empty" rule, mirrored below).
+export interface TrendDateRange {
+  earliest: string;
+  latest: string;
+}
+
+export function trendDateRange(days: TrendDay[]): TrendDateRange | undefined {
+  if (days.length === 0) return undefined;
+
+  let earliest = days[0].dayStart;
+  let latest = days[0].dayStart;
+  for (const day of days) {
+    if (day.dayStart < earliest) earliest = day.dayStart;
+    if (day.dayStart > latest) latest = day.dayStart;
+  }
+  return { earliest, latest };
+}
+
 // Story 5.2's aggregate summary over a set of `TrendDay`s: counts/percentages
 // of days within vs. over target, plus the average daily calories consumed.
 // Percentages and the average are rounded to the nearest whole number for
