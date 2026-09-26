@@ -23,7 +23,10 @@ type EntriesApiResponse =
   | { error: { code: string; message: string } };
 
 // Time the success confirmation stays visible before the caller's
-// `onSuccess` fires (used by both dialogs to auto-close).
+// `onSuccess` fires — only applies to callers using the default deferred
+// path (the text dialog). A caller passing `deferSuccessCallback: false`
+// (the photo dialog, FR-25 amendment) skips this delay entirely; its
+// `onSuccess` fires immediately on success instead.
 const SUCCESS_CLOSE_DELAY_MS = 1200;
 
 export function useEntrySubmission() {
@@ -46,6 +49,10 @@ export function useEntrySubmission() {
   // immediately if the dialog closes during the brief success-confirmation
   // window — the write already durably happened by that point, so skipping
   // the *timer* must not also skip the refresh it would have triggered.
+  // Only ever populated on the deferred path (`deferSuccessCallback` not
+  // `false`) — a caller opting out of the delay calls `onSuccess()`
+  // synchronously and never touches this ref at all, so this early-fire
+  // safety net is specific to deferred callers (the text dialog today).
   const pendingSuccessCallbackRef = useRef<(() => void) | undefined>(undefined);
 
   function reset() {
@@ -97,8 +104,18 @@ export function useEntrySubmission() {
   // `{ photoBase64, photoMimeType }`; this hook only cares about the
   // response. `onSuccess` fires once the success confirmation has been
   // visible for SUCCESS_CLOSE_DELAY_MS — callers use it to close their
-  // dialog.
-  async function submit(body: Record<string, unknown>, onSuccess: () => void) {
+  // dialog. `options.deferSuccessCallback` (default `true`) preserves that
+  // behavior; the photo dialog passes `false` (FR-25 amendment) since it no
+  // longer auto-closes on success — `onSuccess` there only bumps the
+  // Entries list/Remaining Budget refresh, which must fire immediately
+  // regardless of when the user closes the dialog, not gated on a timer
+  // whose entire purpose (holding the confirmation visible before an
+  // auto-close) no longer applies to that caller.
+  async function submit(
+    body: Record<string, unknown>,
+    onSuccess: () => void,
+    options?: { deferSuccessCallback?: boolean }
+  ) {
     if (status === "submitting") return;
 
     // Supersede any still-in-flight prior submission before starting this
@@ -165,6 +182,12 @@ export function useEntrySubmission() {
 
     setStatus("success");
     setCalories(result.calories);
+
+    if (options?.deferSuccessCallback === false) {
+      onSuccess();
+      return;
+    }
+
     pendingSuccessCallbackRef.current = onSuccess;
     closeTimeoutRef.current = setTimeout(() => {
       closeTimeoutRef.current = undefined;

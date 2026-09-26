@@ -20,9 +20,11 @@ import { useEntrySubmission } from "@/hooks/use-entry-submission";
 // opened programmatically once a photo has been picked, not via a
 // DialogTrigger, since the picker itself is the entry point.
 interface LogPhotoDialogProps {
-  // Called once a submission succeeds (after the dialog's own auto-close) —
-  // the host page uses this to refresh the Entries list (Story 2.4 Code
-  // Map).
+  // Called immediately once a submission succeeds — the host page uses this
+  // to refresh the Entries list (Story 2.4 Code Map). Unlike the text
+  // dialog, this one does not auto-close on success (FR-25 amendment): this
+  // fires right away rather than waiting behind the (now-unused, for this
+  // caller) success-confirmation delay the text dialog still uses.
   onSuccess?: () => void;
 }
 
@@ -142,16 +144,21 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
       return;
     }
 
+    // FR-25 amendment: unlike the text dialog, this dialog does not
+    // auto-close on success — it stays open showing the photo preview and
+    // the calorie estimate until the user explicitly closes it via the
+    // dialog's own close control (handleOpenChange(false), already wired
+    // to Radix's onOpenChange). `deferSuccessCallback: false` fires
+    // `onSuccess` (the Entries list/Remaining Budget refresh) immediately
+    // rather than behind the timer this dialog no longer uses.
     await submit(
       {
         photoBase64: compressed.base64,
         photoMimeType: compressed.mimeType,
         tz: getClientTimeZone(),
       },
-      () => {
-        handleOpenChange(false);
-        onSuccess?.();
-      }
+      () => onSuccess?.(),
+      { deferSuccessCallback: false }
     );
   }
 
