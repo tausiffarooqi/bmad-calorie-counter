@@ -41,6 +41,12 @@ export function useEntrySubmission() {
   const requestIdRef = useRef(0);
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Epic 2 retro action item: the callback `submit()`'s success-close timer
+  // is about to invoke, stashed so `cancelAndReset()` can still run it
+  // immediately if the dialog closes during the brief success-confirmation
+  // window — the write already durably happened by that point, so skipping
+  // the *timer* must not also skip the refresh it would have triggered.
+  const pendingSuccessCallbackRef = useRef<(() => void) | undefined>(undefined);
 
   function reset() {
     setStatus("idle");
@@ -59,6 +65,8 @@ export function useEntrySubmission() {
       abortControllerRef.current?.abort();
       if (closeTimeoutRef.current) {
         clearTimeout(closeTimeoutRef.current);
+        pendingSuccessCallbackRef.current?.();
+        pendingSuccessCallbackRef.current = undefined;
       }
     };
   }, []);
@@ -73,6 +81,13 @@ export function useEntrySubmission() {
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = undefined;
+      // The POST already succeeded by the time this timer was scheduled —
+      // closing the dialog mid-confirmation is the user dismissing an
+      // already-true "Logged" message, not cancelling anything. Skipping
+      // the callback here would silently drop the list refresh for an
+      // Entry that was already durably created.
+      pendingSuccessCallbackRef.current?.();
+      pendingSuccessCallbackRef.current = undefined;
     }
     reset();
   }
@@ -150,7 +165,10 @@ export function useEntrySubmission() {
 
     setStatus("success");
     setCalories(result.calories);
+    pendingSuccessCallbackRef.current = onSuccess;
     closeTimeoutRef.current = setTimeout(() => {
+      closeTimeoutRef.current = undefined;
+      pendingSuccessCallbackRef.current = undefined;
       onSuccess();
     }, SUCCESS_CLOSE_DELAY_MS);
   }

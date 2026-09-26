@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getClientTimeZone } from "@/lib/get-client-timezone";
+import { isUnauthenticatedErrorBody, redirectToLogin } from "@/lib/handle-session-expiry";
 import { computeTrendSummaryStats, type TrendDay } from "@/lib/services/trends";
 import { BackToDailyViewLink } from "@/app/back-to-daily-view-link";
 
@@ -37,13 +38,7 @@ export default function TrendsPage() {
         // Session expired while this view was mounted — same handling as
         // useDailyView()'s identical fetch (proxy.ts's redirect on an
         // expired session, followed transparently by fetch()).
-        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-        window.location.href = "/login";
-        return;
-      }
-
-      if (!response.ok) {
-        setLoadError(true);
+        redirectToLogin();
         return;
       }
 
@@ -55,6 +50,18 @@ export default function TrendsPage() {
         return;
       }
       if (cancelled) return;
+
+      if (!response.ok) {
+        // Epic 2 retro action item: the route's own defense-in-depth 401
+        // (reached only if proxy.ts's redirect is ever bypassed) gets the
+        // same recovery as the response.redirected case above.
+        if (isUnauthenticatedErrorBody(result)) {
+          redirectToLogin();
+          return;
+        }
+        setLoadError(true);
+        return;
+      }
 
       setLoadError(false);
       setDays(result.days ?? []);

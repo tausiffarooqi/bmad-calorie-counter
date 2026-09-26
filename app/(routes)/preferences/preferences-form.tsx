@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { MAX_DAILY_CALORIE_TARGET, type DietaryPreference } from "@/lib/constants";
+import { isUnauthenticatedErrorBody, redirectToLogin } from "@/lib/handle-session-expiry";
 
 type PatchResult = { ok: true } | { ok: false; message: string };
 
@@ -24,8 +25,7 @@ async function patchPreferences(body: Record<string, unknown>): Promise<PatchRes
   });
 
   if (response.redirected) {
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-    window.location.href = "/login";
+    redirectToLogin();
     // Navigation is async; keep the caller's UI in a submitting state
     // until the reload actually happens rather than flashing an error.
     return new Promise(() => {});
@@ -33,6 +33,14 @@ async function patchPreferences(body: Record<string, unknown>): Promise<PatchRes
 
   const result = await response.json();
   if (!response.ok) {
+    // Epic 2 retro action item: the route's own defense-in-depth 401 (reached
+    // only if proxy.ts's redirect is ever bypassed) gets the same recovery
+    // as the response.redirected case above, instead of a misleading inline
+    // "something went wrong" for what's actually an expired session.
+    if (isUnauthenticatedErrorBody(result)) {
+      redirectToLogin();
+      return new Promise(() => {});
+    }
     return { ok: false, message: result?.error?.message ?? "Something went wrong." };
   }
   return { ok: true };

@@ -209,7 +209,7 @@ export async function POST(request: Request) {
 
   let result;
   try {
-    result = await provider.estimate(estimationInput);
+    result = await provider.estimate(estimationInput, request.signal);
   } catch (error) {
     // Never logs `estimationInput` — only the adapter's own error, which
     // carries call-failure metadata (status/message), never photo bytes
@@ -229,6 +229,33 @@ export async function POST(request: Request) {
   if (!result.ok) {
     // Expected outcome, not an error — 200, no `entries` row created.
     return NextResponse.json({ ok: false, reason: result.reason });
+  }
+
+  // Epic 2 retro action item: the client already believes this submission
+  // was cancelled (it closed the dialog, which aborts its own fetch) — the
+  // Gemini call above may have already been in flight and completed
+  // regardless (fetch()'s AbortSignal only rejects the *client's* promise,
+  // it doesn't retroactively undo billed work), but nothing downstream of
+  // this point (classification, the DB write) should still happen for a
+  // request nobody is waiting on anymore.
+  if (request.signal.aborted) {
+    console.error("Submission aborted by client after estimation succeeded — skipping entry creation.");
+    return NextResponse.json(
+      { error: { code: "aborted", message: "Request was cancelled." } },
+      { status: 499 }
+    );
+  }
+
+  // Epic 2 retro action item: MAX_DESCRIPTION_LENGTH's own comment
+  // documents it as bounding `entries.description_text`, but the check
+  // above only ever applied to the user-typed input on the text path
+  // (`body.descriptionText`) — `result.description` (Gemini's own cleaned
+  // restatement on the text path, or an entirely model-generated
+  // description with no user-typed input to bound at all on the photo
+  // path) is what's actually persisted via `createEntry()` below, and had
+  // no cap anywhere.
+  if (result.description.length > MAX_DESCRIPTION_LENGTH) {
+    result = { ...result, description: result.description.slice(0, MAX_DESCRIPTION_LENGTH) };
   }
 
   // Classification runs as a downstream step right after a successful

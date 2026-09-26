@@ -16,5 +16,12 @@ export type EstimationResult =
   | { ok: false; reason: "insufficient_detail" };
 
 export interface EstimationProvider {
-  estimate(input: EstimationInput): Promise<EstimationResult>;
+  // `signal` (Epic 2 retro action item) lets the caller's own request abort
+  // propagate into the underlying call — previously a client closing the
+  // dialog mid-submission only cancelled the browser's own fetch; the
+  // server-side Gemini call and the resulting entries write ran to
+  // completion regardless, silently creating an Entry the user believed
+  // they'd cancelled. Optional so existing/test callers that don't have a
+  // signal to forward keep compiling unmodified.
+  estimate(input: EstimationInput, signal?: AbortSignal): Promise<EstimationResult>;
 }

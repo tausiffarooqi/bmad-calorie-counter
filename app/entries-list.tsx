@@ -30,24 +30,32 @@ export function EntriesList({ entries, loadError }: EntriesListProps) {
     );
   }
 
-  if (entries.length === 0) return null;
-
+  // Epic 2 retro action item: the aria-live region itself is always
+  // mounted, even while `entries` is empty — only the styled `<ul>` (and
+  // its "renders nothing when empty, no placeholder box" contract) is
+  // conditional. Previously the whole `aria-live="polite"` node only
+  // existed once `entries.length > 0`, so the very first Entry logged each
+  // Day mounted the live region *with its content already set in the same
+  // commit* — the exact "freshly-mounted-with-text-already-set" failure
+  // mode `components/live-region.tsx` exists specifically to avoid, just
+  // never applied here since this file predates that component.
   return (
-    <ul
-      aria-live="polite"
-      className="w-full max-w-sm list-none rounded-md border border-border bg-card"
-    >
-      {entries.map((entry, index) => (
-        <li
-          key={entry.id}
-          className={`flex items-center justify-between gap-4 px-4 py-2.5 text-sm text-foreground ${
-            index > 0 ? "border-t border-border" : ""
-          }`}
-        >
-          <span className="min-w-0 truncate">{entry.description}</span>
-          <span className="shrink-0 text-muted-foreground">{entry.calories} cal</span>
-        </li>
-      ))}
-    </ul>
+    <div aria-live="polite">
+      {entries.length > 0 && (
+        <ul className="w-full max-w-sm list-none rounded-md border border-border bg-card">
+          {entries.map((entry, index) => (
+            <li
+              key={entry.id}
+              className={`flex items-center justify-between gap-4 px-4 py-2.5 text-sm text-foreground ${
+                index > 0 ? "border-t border-border" : ""
+              }`}
+            >
+              <span className="min-w-0 truncate">{entry.description}</span>
+              <span className="shrink-0 text-muted-foreground">{entry.calories} cal</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

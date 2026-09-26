@@ -56,7 +56,7 @@ function isValidPayload(value: unknown): value is EstimationPayload {
 // Gemini directly via `fetch()` — no SDK dependency, matching this
 // codebase's existing minimal-dependency pattern (see lib/supabase/*).
 export class GeminiAdapter implements EstimationProvider {
-  async estimate(input: EstimationInput): Promise<EstimationResult> {
+  async estimate(input: EstimationInput, signal?: AbortSignal): Promise<EstimationResult> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error("GEMINI_API_KEY is not set — check .env.local.");
@@ -101,6 +101,7 @@ export class GeminiAdapter implements EstimationProvider {
           },
         },
       }),
+      signal,
     });
 
     // A non-2xx response is a genuine call failure — propagates as a real
