@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-25-2026 20:57'
+last_updated: '09-25-2026 21:05'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -205,7 +205,7 @@ action_items:
       gracefully (return entries, omit budget/recommendations) instead of failing
       the whole response, matching POSTs own precedent in the same file"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-09-25.md"
   - id: "epic-3-retro-item-19-give-the-remaining-calorie-budget-number"
     epic: 3
@@ -213,14 +213,14 @@ action_items:
       distinct from the cold-load skeleton, matching EntriesLists existing alert treatment
       for the same loadError condition"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-09-25.md"
   - id: "epic-3-retro-item-20-export-a-shared-local-hour-helper-from-d"
     epic: 3
     action: "Export a shared local-hour helper from day-boundary.ts and have recommendation-engine.ts
       import it instead of maintaining an independent copy"
     owner: "next dev session"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-09-25.md"
   - id: "epic-4-retro-item-21-stop-an-unrelated-refetch-accepting-the"
     epic: 4

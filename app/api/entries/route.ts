@@ -455,133 +455,143 @@ export async function GET(request: Request) {
     return entriesFetchFailedResponse();
   }
 
-  // profiles.user_id is created at registration (Story 1.1) and never
-  // deleted independently, so a missing row here would indicate data
-  // corruption rather than a normal state to design around (mirrors
-  // preferences/page.tsx's identical guard) — logged with its own distinct
-  // message rather than folded into either query-failure catch above.
+  // Epic 3 retro action item: a missing `profiles` row still indicates data
+  // corruption (registration guarantees this row, Story 1.1, and nothing
+  // deletes it independently) — logged the same as before — but the entries
+  // fetch above already succeeded, so this no longer fails the *whole*
+  // response the way POST's own identical guard never did (Code Map: "same
+  // graceful-degradation philosophy" — GET and POST previously disagreed on
+  // an otherwise-identical condition). All budget/recommendation fields
+  // below default to their "nothing to show" values and are simply omitted
+  // when `profile` is missing; the entries list itself still returns.
   if (!profile) {
     console.error(`No profile found for authenticated user ${user.id}`);
-    return entriesFetchFailedResponse();
   }
 
-  // Story 4.1: reads + (if needed) marks `lastFirstLoginPromptAt`, using the
-  // `profile` this handler already fetched above (no redundant re-fetch)
-  // and the same `now` the rest of this request is computed against (no
-  // second, slightly-later instant). Deliberately run only *after* the
-  // primary entries/profile reads above have already succeeded — never
-  // inside that `Promise.all` — so a failure in either of those reads can
-  // never leave this write committed for a Day the user was actually shown
-  // an error instead of the prompt. Its own `.catch()` still falls back to
-  // `false` rather than rethrowing — this signal is an enrichment on top of
-  // the now-guaranteed-successful reads above, so a failure here must not
-  // fail the whole response (mirrors POST's "enrichment failure falls back,
-  // never fails the primary response" pattern).
-  const showFirstLoginPrompt = await checkAndMarkFirstLoginPrompt(
-    user.id,
-    profile.lastFirstLoginPromptAt,
-    now,
-    tz
-  ).catch((error) => {
-    console.error("Failed to check/mark first-login prompt:", error);
-    return false;
-  });
-
-  // `computeRemainingBudget()` is the single place this subtraction
-  // happens (budget-engine.ts) — both Meal and Snack/Beverage Entries
-  // count identically (FR-8), and the result is returned unclamped, even
-  // when negative (Over-Target, Story 3.5's concern to detect/style).
-  const remainingBudget = computeRemainingBudget(profile.dailyCalorieTarget, rows);
-
-  // Story 4.4: computed from the already-fetched `profile.breakfastOfferAcceptedAt`
-  // + `now`/`tz` (no extra query) — used both to decide the offer card's own
-  // visibility below and as getRecommendations()'s new 6th argument (Code
-  // Map).
-  const breakfastAccepted = breakfastOfferAcceptedToday(
-    profile.breakfastOfferAcceptedAt,
-    now,
-    tz
-  );
-
-  // Same `rows`/`profile` this handler already fetched above — no second
-  // `entries` query (Code Map: "using the already-fetched rows/profile").
-  // Wrapped in its own try/catch, same as every other fallible call in this
-  // handler (getRecommendations() is pure/sync and shouldn't throw given
-  // valid inputs, but this keeps the handler's own stated invariant true
-  // regardless — "every fallible call ... returns the app's envelope,
-  // never an unhandled exception").
-  let recommendations: ReturnType<typeof getRecommendations>;
-  try {
-    recommendations = getRecommendations(
-      now,
-      tz,
-      toRecommendationEntries(rows),
-      toDietaryPreference(profile.dietaryPreference),
-      remainingBudget,
-      breakfastAccepted
-    );
-  } catch (error) {
-    console.error("Failed to compute recommendations:", error);
-    return entriesFetchFailedResponse();
-  }
-
-  // Story 4.4 (amended — see spec's Spec Change Log): deliberately excludes
-  // `showFirstLoginPrompt` from this condition. That flag is one-shot-per-Day
-  // (`checkAndMarkFirstLoginPrompt` sets it `true` only on the Day's very
-  // first GET, `false` on every subsequent load), so ANDing on it made the
-  // offer card structurally unable to ever reappear on a reload — contradicting
-  // the frozen I/O matrix's "Decline, then reload same day before 10am ->
-  // Offer card may reappear" row and the frozen Boundaries' "the two cards
-  // ... resolve independently" clause (gating the second card on the first
-  // card's own one-shot marker is itself a form of coupling the Boundaries
-  // forbid). `entries.length === 0` alone is what actually persists correctly
-  // across reloads within the same Day — never shown once a Meal/Snack is
-  // logged, never during Over-Target State (`remainingBudget >= 0`, Story
-  // 3.5's suppression reused as-is), and only before 10am
-  // (`isBreakfastOfferWindow`, recommendation-engine.ts's own centralized
-  // time-window decision, AD-6), and never once already accepted today
-  // (`!breakfastAccepted`).
-  const showBreakfastOffer =
-    rows.length === 0 &&
-    remainingBudget >= 0 &&
-    isBreakfastOfferWindow(now, tz) &&
-    !breakfastAccepted;
-
-  // Story 4.2: computed only when the First-Login prompt is already showing
-  // (Boundaries & Constraints: "Do not compute or return this message when
-  // the First-Login prompt isn't showing") — avoids an unnecessary query
-  // otherwise (Code Map). "Yesterday" is derived via `dayBoundary()` applied
-  // one instant before today's Day-start — reusing the already-computed
-  // `todayStart`, never separate date math (Approach) — and compared
-  // against the *current* `profile.dailyCalorieTarget` (this app has no
-  // historized/versioned target-per-Day, Boundaries & Constraints).
+  let showFirstLoginPrompt = false;
+  let remainingBudget: number | undefined;
+  let recommendations: ReturnType<typeof getRecommendations> | undefined;
+  let breakfastAccepted = false;
+  let showBreakfastOffer = false;
   let toneMessage: string | undefined;
-  if (showFirstLoginPrompt) {
-    // Enrichment on top of the now-guaranteed-successful reads above — a
-    // failure here must not fail the whole response (mirrors this file's
-    // own "enrichment failure falls back, never fails the primary
-    // response" pattern used for checkAndMarkFirstLoginPrompt()/POST's
-    // post-submission recompute above). Falls back to `undefined`, which
-    // the response below omits — the First-Login prompt itself still
-    // renders, just without its tone-message line. Split into two
-    // try/catches (the DB read vs. the pure classify+lookup) so a failure
-    // is attributed to the step that actually failed, matching the
-    // Promise.all block above giving entries/profile their own distinct
-    // log messages.
-    let yesterdayRows: Awaited<ReturnType<typeof getEntriesForDay>> | undefined;
+
+  if (profile) {
+    // Story 4.1: reads + (if needed) marks `lastFirstLoginPromptAt`, using
+    // the `profile` this handler already fetched above (no redundant
+    // re-fetch) and the same `now` the rest of this request is computed
+    // against (no second, slightly-later instant). Deliberately run only
+    // *after* the primary entries/profile reads above have already
+    // succeeded — never inside that `Promise.all` — so a failure in either
+    // of those reads can never leave this write committed for a Day the
+    // user was actually shown an error instead of the prompt. Its own
+    // `.catch()` still falls back to `false` rather than rethrowing — this
+    // signal is an enrichment on top of the now-guaranteed-successful reads
+    // above, so a failure here must not fail the whole response (mirrors
+    // POST's "enrichment failure falls back, never fails the primary
+    // response" pattern).
+    showFirstLoginPrompt = await checkAndMarkFirstLoginPrompt(
+      user.id,
+      profile.lastFirstLoginPromptAt,
+      now,
+      tz
+    ).catch((error) => {
+      console.error("Failed to check/mark first-login prompt:", error);
+      return false;
+    });
+
+    // `computeRemainingBudget()` is the single place this subtraction
+    // happens (budget-engine.ts) — both Meal and Snack/Beverage Entries
+    // count identically (FR-8), and the result is returned unclamped, even
+    // when negative (Over-Target, Story 3.5's concern to detect/style).
+    remainingBudget = computeRemainingBudget(profile.dailyCalorieTarget, rows);
+
+    // Story 4.4: computed from the already-fetched `profile.breakfastOfferAcceptedAt`
+    // + `now`/`tz` (no extra query) — used both to decide the offer card's own
+    // visibility below and as getRecommendations()'s new 6th argument (Code
+    // Map).
+    breakfastAccepted = breakfastOfferAcceptedToday(profile.breakfastOfferAcceptedAt, now, tz);
+
+    // Same `rows`/`profile` this handler already fetched above — no second
+    // `entries` query (Code Map: "using the already-fetched rows/profile").
+    // Wrapped in its own try/catch, same as every other fallible call in this
+    // handler (getRecommendations() is pure/sync and shouldn't throw given
+    // valid inputs, but this keeps the handler's own stated invariant true
+    // regardless — "every fallible call ... returns the app's envelope,
+    // never an unhandled exception"). Unlike the missing-profile guard
+    // above, this one keeps its existing hard-fail behavior — a genuinely
+    // failing pure function is a different, more surprising class of
+    // problem than a row that simply isn't there.
     try {
-      const { start: yesterdayStart, end: yesterdayEnd } = previousDayBoundary(todayStart, tz);
-      yesterdayRows = await getEntriesForDay(user.id, yesterdayStart, yesterdayEnd);
+      recommendations = getRecommendations(
+        now,
+        tz,
+        toRecommendationEntries(rows),
+        toDietaryPreference(profile.dietaryPreference),
+        remainingBudget,
+        breakfastAccepted
+      );
     } catch (error) {
-      console.error("Failed to fetch yesterday's entries for tone message:", error);
+      console.error("Failed to compute recommendations:", error);
+      return entriesFetchFailedResponse();
     }
 
-    if (yesterdayRows) {
+    // Story 4.4 (amended — see spec's Spec Change Log): deliberately excludes
+    // `showFirstLoginPrompt` from this condition. That flag is one-shot-per-Day
+    // (`checkAndMarkFirstLoginPrompt` sets it `true` only on the Day's very
+    // first GET, `false` on every subsequent load), so ANDing on it made the
+    // offer card structurally unable to ever reappear on a reload — contradicting
+    // the frozen I/O matrix's "Decline, then reload same day before 10am ->
+    // Offer card may reappear" row and the frozen Boundaries' "the two cards
+    // ... resolve independently" clause (gating the second card on the first
+    // card's own one-shot marker is itself a form of coupling the Boundaries
+    // forbid). `entries.length === 0` alone is what actually persists correctly
+    // across reloads within the same Day — never shown once a Meal/Snack is
+    // logged, never during Over-Target State (`remainingBudget >= 0`, Story
+    // 3.5's suppression reused as-is), and only before 10am
+    // (`isBreakfastOfferWindow`, recommendation-engine.ts's own centralized
+    // time-window decision, AD-6), and never once already accepted today
+    // (`!breakfastAccepted`).
+    showBreakfastOffer =
+      rows.length === 0 &&
+      remainingBudget >= 0 &&
+      isBreakfastOfferWindow(now, tz) &&
+      !breakfastAccepted;
+
+    // Story 4.2: computed only when the First-Login prompt is already showing
+    // (Boundaries & Constraints: "Do not compute or return this message when
+    // the First-Login prompt isn't showing") — avoids an unnecessary query
+    // otherwise (Code Map). "Yesterday" is derived via `dayBoundary()` applied
+    // one instant before today's Day-start — reusing the already-computed
+    // `todayStart`, never separate date math (Approach) — and compared
+    // against the *current* `profile.dailyCalorieTarget` (this app has no
+    // historized/versioned target-per-Day, Boundaries & Constraints).
+    if (showFirstLoginPrompt) {
+      // Enrichment on top of the now-guaranteed-successful reads above — a
+      // failure here must not fail the whole response (mirrors this file's
+      // own "enrichment failure falls back, never fails the primary
+      // response" pattern used for checkAndMarkFirstLoginPrompt()/POST's
+      // post-submission recompute above). Falls back to `undefined`, which
+      // the response below omits — the First-Login prompt itself still
+      // renders, just without its tone-message line. Split into two
+      // try/catches (the DB read vs. the pure classify+lookup) so a failure
+      // is attributed to the step that actually failed, matching the
+      // Promise.all block above giving entries/profile their own distinct
+      // log messages.
+      let yesterdayRows: Awaited<ReturnType<typeof getEntriesForDay>> | undefined;
       try {
-        const outcome = getToneMessageOutcome(yesterdayRows, profile.dailyCalorieTarget);
-        toneMessage = TONE_MESSAGES[outcome];
+        const { start: yesterdayStart, end: yesterdayEnd } = previousDayBoundary(todayStart, tz);
+        yesterdayRows = await getEntriesForDay(user.id, yesterdayStart, yesterdayEnd);
       } catch (error) {
-        console.error("Failed to compute tone-adaptive message outcome:", error);
+        console.error("Failed to fetch yesterday's entries for tone message:", error);
+      }
+
+      if (yesterdayRows) {
+        try {
+          const outcome = getToneMessageOutcome(yesterdayRows, profile.dailyCalorieTarget);
+          toneMessage = TONE_MESSAGES[outcome];
+        } catch (error) {
+          console.error("Failed to compute tone-adaptive message outcome:", error);
+        }
       }
     }
   }

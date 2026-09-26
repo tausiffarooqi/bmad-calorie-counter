@@ -135,12 +135,19 @@ export default function Home() {
               focal point (`display-number` role). Real, live value from
               useDailyView() (Story 3.2), replacing the old hardcoded "1,240"
               placeholder. Unclamped — can render negative (Over-Target), never
-              rounded to zero (Boundaries & Constraints). Falls back to the same
-              skeleton placeholder as the cold-load case (never the stale prior
-              value) whenever the latest fetch failed. */}
+              rounded to zero (Boundaries & Constraints). Never shows the stale
+              prior value on a failed fetch — but a genuine load failure now
+              gets its own explicit alert (Epic 3 retro action item), matching
+              EntriesList's identical `loadError` treatment, instead of an
+              ambiguous perpetual "still loading" skeleton for what's actually
+              a failure. */}
           {budgetReady ? (
             <p className="font-sans text-display-number text-primary">
               {remainingBudget.toLocaleString()}
+            </p>
+          ) : loadError ? (
+            <p role="alert" className="text-sm text-primary">
+              Couldn&apos;t load your budget — try reloading.
             </p>
           ) : (
             <div aria-hidden="true" className="h-[52px] w-32 animate-pulse rounded-md bg-muted" />

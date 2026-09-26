@@ -3,6 +3,7 @@
 // plain `node --test` (no bundler/path-alias resolution available there),
 // same convention as entry-classifier.ts.
 import type { Classification, DietaryPreference } from "../constants.ts";
+import { getLocalParts } from "./day-boundary.ts";
 
 // The two Meal Slots this file always expects on their own — breakfast
 // (Story 4.4) is genuinely additive on top of these, never folded into this
@@ -55,23 +56,11 @@ const MORNING_WINDOW_START_HOUR = 5;
 const MIDDAY_WINDOW_START_HOUR = 12;
 const EVENING_WINDOW_END_HOUR = 22;
 
-// Reads the local wall-clock hour `now` represents in `tz`. Same
-// Intl.DateTimeFormat approach as day-boundary.ts's getLocalParts()
-// (including its hourCycle:"h23" midnight-as-"24" normalization), but a
-// narrower, standalone read (only the hour is needed here) rather than an
-// import of that file's unexported helper.
+// Reads the local wall-clock hour `now` represents in `tz` — a thin wrapper
+// over day-boundary.ts's shared getLocalParts() (Epic 3 retro action item;
+// this file previously kept its own independent Intl.DateTimeFormat copy).
 function getLocalHour(now: Date, tz: string): number {
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz,
-    hourCycle: "h23",
-    hour: "2-digit",
-  });
-  const part = formatter.formatToParts(now).find((p) => p.type === "hour");
-  if (!part) {
-    throw new Error('Intl.DateTimeFormat did not produce an "hour" part.');
-  }
-  const hour = parseInt(part.value, 10);
-  return hour === 24 ? 0 : hour;
+  return getLocalParts(now, tz).hour;
 }
 
 // Expected Meal Slots for the local hour (Boundaries & Constraints, I/O &

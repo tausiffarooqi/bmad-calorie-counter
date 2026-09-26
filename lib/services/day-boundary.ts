@@ -18,7 +18,7 @@ export function isValidTimeZone(tz: string): boolean {
   }
 }
 
-interface LocalParts {
+export interface LocalParts {
   year: number;
   month: number; // 1-12
   day: number;
@@ -28,7 +28,12 @@ interface LocalParts {
 }
 
 // Reads the local wall-clock date/time `instant` represents in `tz`.
-function getLocalParts(instant: Date, tz: string): LocalParts {
+// Exported (Epic 3 retro action item) — this is the one place the
+// hourCycle:"h23"-plus-midnight-as-"24"-normalization logic should live;
+// recommendation-engine.ts previously kept its own independent copy for
+// its narrower "just the hour" need, risking the two drifting apart on a
+// future timezone/DST fix applied to only one.
+export function getLocalParts(instant: Date, tz: string): LocalParts {
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: tz,
     hourCycle: "h23",
