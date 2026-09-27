@@ -60,9 +60,9 @@ development_status:
   epic-3: done
   3-1-classify-entries-as-meal-or-snack-beverage: done
   3-2-compute-remaining-calorie-budget: done
-  3-3-meal-slot-recommendations-by-time-of-day: done
+  3-3-meal-slot-recommendations-by-time-of-day: ready-for-dev
   3-4-after-10pm-conditional-recommendation: done
-  3-5-over-target-override: done
+  3-5-over-target-override: ready-for-dev
   epic-3-retrospective: done
 
   epic-4: done
