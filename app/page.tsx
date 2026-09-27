@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LogOut, Settings, TrendingUp } from "lucide-react";
+import { Flame, LogOut, Settings, TrendingUp } from "lucide-react";
 import { HeaderIconButton } from "@/app/header-icon-button";
 import { LogEntryDialog } from "@/app/log-entry-dialog";
 import { LogPhotoDialog } from "@/app/log-photo-dialog";
@@ -12,6 +12,7 @@ import { useDailyView } from "@/hooks/use-daily-view";
 import { useGreetingPeriod } from "@/hooks/use-greeting-period";
 import { getClientTimeZone } from "@/lib/get-client-timezone";
 import { formatGreeting } from "@/lib/services/greeting";
+import { computeHeroBudgetDisplay } from "@/lib/services/hero-budget";
 import { createClient } from "@/lib/supabase/client";
 import { redirectToLogin } from "@/lib/handle-session-expiry";
 
@@ -35,6 +36,7 @@ export default function Home() {
   const {
     entries,
     name,
+    dailyCalorieTarget,
     remainingBudget,
     recommendations,
     promptShownThisSession,
@@ -117,8 +119,13 @@ export default function Home() {
   // A valid, current budget value to actually render — false both before
   // the first resolution *and* whenever the latest fetch failed, so a
   // failed refetch after a previously-successful load never leaves the old,
-  // now-stale number on screen with no error indication.
-  const budgetReady = remainingBudget !== undefined && !loadError;
+  // now-stale number on screen with no error indication. Story 4.1's Hero
+  // card also needs `dailyCalorieTarget` (the progress bar's denominator) —
+  // in practice the two are always set together (both come from the same
+  // server-side `if (profile)` block, use-daily-view.ts), so this doesn't
+  // change when the card is considered ready, just what it can safely read.
+  const budgetReady =
+    remainingBudget !== undefined && dailyCalorieTarget !== undefined && !loadError;
 
   // Over-Target State (Story 3.5) — derived client-side from the same
   // `remainingBudget` sign the API already returns, no new response field.
@@ -178,27 +185,80 @@ export default function Home() {
           state (matches the mockup's single-mention design). */}
       {!showPrompt && (
         <>
-          <p className="text-label uppercase text-muted-foreground">Remaining calories today</p>
-          {/* Remaining Calorie Budget — the Daily view's single large numeric
-              focal point (`display-number` role). Real, live value from
-              useDailyView() (Story 3.2), replacing the old hardcoded "1,240"
-              placeholder. Unclamped — can render negative (Over-Target), never
-              rounded to zero (Boundaries & Constraints). Never shows the stale
-              prior value on a failed fetch — but a genuine load failure now
-              gets its own explicit alert (Epic 3 retro action item), matching
-              EntriesList's identical `loadError` treatment, instead of an
-              ambiguous perpetual "still loading" skeleton for what's actually
-              a failure. */}
           {budgetReady ? (
-            <p className="font-sans text-display-number text-primary">
-              {remainingBudget.toLocaleString()}
-            </p>
+            (() => {
+              // Consumed/percent/bar-width/caption math (Code Map) — a
+              // pure, unit-tested function (lib/services/hero-budget.ts),
+              // mirroring this codebase's convention for derived-display
+              // logic (budget-engine.ts, trends.ts, greeting.ts).
+              const { barWidthPercent, percentOfTarget, remainingCaption } =
+                computeHeroBudgetDisplay(remainingBudget, dailyCalorieTarget);
+              return (
+                <div className="relative w-full max-w-sm overflow-hidden rounded-hero bg-hero p-5 text-hero-foreground shadow-soft-strong">
+                  <div
+                    aria-hidden="true"
+                    className="absolute -top-[60px] -right-[50px] size-[180px] rounded-full border border-white/12"
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="absolute -top-6 -right-3 size-[110px] rounded-full border border-white/12"
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="absolute top-4 right-4 flex size-[38px] items-center justify-center rounded-full bg-white/10 text-hero-accent"
+                  >
+                    <Flame size={18} />
+                  </div>
+                  <p className="relative mb-1.5 text-[13px] text-hero-muted-foreground">
+                    Your daily balance
+                  </p>
+                  {/* Remaining Calorie Budget — the Daily view's single large
+                      numeric focal point (`display-number` role, unchanged).
+                      Unclamped — can render negative (Over-Target), never
+                      rounded to zero (Boundaries & Constraints carried over
+                      from the original AC). */}
+                  <div className="relative flex items-baseline gap-2">
+                    <p className="text-display-number font-sans">
+                      {remainingBudget.toLocaleString()}
+                    </p>
+                    <span className="text-sm text-hero-muted-foreground">
+                      / {dailyCalorieTarget.toLocaleString()} kcal target
+                    </span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-label="Portion of daily calorie target consumed"
+                    aria-valuenow={barWidthPercent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className="relative mt-3.5 h-2 overflow-hidden rounded-full bg-white/15"
+                  >
+                    <div
+                      className="h-full rounded-full bg-hero-accent"
+                      style={{ width: `${barWidthPercent}%` }}
+                    />
+                  </div>
+                  <div className="relative mt-2 flex justify-between text-xs text-hero-muted-foreground">
+                    <span>{remainingCaption}</span>
+                    <span>{percentOfTarget}% of target</span>
+                  </div>
+                </div>
+              );
+            })()
           ) : loadError ? (
             <p role="alert" className="text-sm text-primary">
               Couldn&apos;t load your budget — try reloading.
             </p>
           ) : (
-            <div aria-hidden="true" className="h-[52px] w-32 animate-pulse rounded-md bg-muted" />
+            // Roughly matches the real Hero card's rendered height (5-unit
+            // padding + label + display-number + bar + captions) — an
+            // approximation, not a pixel contract; a layout shift here on a
+            // future card-content change is a minor, accepted cost for a
+            // transient skeleton, not a regression to chase precisely.
+            <div
+              aria-hidden="true"
+              className="h-[164px] w-full max-w-sm animate-pulse rounded-hero bg-muted"
+            />
           )}
         </>
       )}

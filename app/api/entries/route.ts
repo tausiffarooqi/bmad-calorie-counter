@@ -607,6 +607,10 @@ export async function GET(request: Request) {
     // account with no Name on file (FR-26); the client omits the name
     // entirely in that case rather than showing a placeholder.
     name: profile?.name ?? null,
+    // Story 4.1's Hero card (UX-DR29) — needed client-side to compute the
+    // progress bar / "/ N kcal target" caption against; same
+    // already-fetched `profile`, no extra query.
+    dailyCalorieTarget: profile?.dailyCalorieTarget,
     remainingBudget,
     recommendations,
     showFirstLoginPrompt,

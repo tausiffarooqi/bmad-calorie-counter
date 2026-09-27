@@ -27,6 +27,8 @@ interface EntriesApiResponse {
   // Story 4.5's Greeting header (FR-27) — null when the user has no Name on
   // file (FR-26).
   name?: string | null;
+  // Story 4.1's Hero card (UX-DR29) — the progress bar's denominator.
+  dailyCalorieTarget?: number;
   remainingBudget?: number;
   recommendations?: Recommendation[];
   showFirstLoginPrompt?: boolean;
@@ -52,6 +54,7 @@ interface EntriesApiResponse {
 export function useDailyView(refreshKey: number) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [name, setName] = useState<string | null>(null);
+  const [dailyCalorieTarget, setDailyCalorieTarget] = useState<number | undefined>(undefined);
   const [remainingBudget, setRemainingBudget] = useState<number | undefined>(undefined);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   // Epic 4 retro action item: latches "the First-Login prompt was shown
@@ -125,6 +128,7 @@ export function useDailyView(refreshKey: number) {
       setLoadError(false);
       setEntries(result.entries ?? []);
       setName(result.name ?? null);
+      setDailyCalorieTarget(result.dailyCalorieTarget);
       setRemainingBudget(result.remainingBudget);
       setRecommendations(result.recommendations ?? []);
       if (result.showFirstLoginPrompt) {
@@ -145,6 +149,7 @@ export function useDailyView(refreshKey: number) {
   return {
     entries,
     name,
+    dailyCalorieTarget,
     remainingBudget,
     recommendations,
     promptShownThisSession,
