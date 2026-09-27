@@ -307,6 +307,10 @@ So that my budget, recommendations, and greeting stay accurate as my needs chang
 **When** the screen loads
 **Then** I see my current Name (or a blank field if I registered before this capability existed, FR-26), Daily Calorie Target, and Dietary Preference (vegetarian/non-vegetarian) values
 
+**Given** the Warm Editorial Refresh's Page card treatment (2026-09-27, DESIGN.md Components)
+**When** the screen renders
+**Then** the card uses `{rounded.card}` (16px) and a soft shadow — matching Login/Register's own approved mockup treatment, though their code hasn't been updated yet (deferred) — and the page's content column is top-aligned, not vertically centered, matching the Daily view's own top-alignment (Story 0.1) rather than the page's previous, clearly-visible vertical-centering (this screen's content is short enough for the difference to be obvious, unlike the Daily view's usually-overflowing content)
+
 **Given** I change my Name to a non-blank value
 **When** I save
 **Then** the `profiles` row's `name` is updated and I see an inline save confirmation next to the field (UX-DR19), using the same per-field-save pattern as Daily Calorie Target below — this is the only way a pre-existing account with no Name on file can acquire one (FR-26)

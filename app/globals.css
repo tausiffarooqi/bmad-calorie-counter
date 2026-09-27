@@ -97,6 +97,10 @@
      2026-09-26) — a dedicated token (not Tailwind's built-in `xl` slot,
      see above) so `rounded-hero` is free for Story 4.1's Hero card alone. */
   --radius-hero: 20px;
+  /* Page card radius, 16px — see DESIGN.md's Components > "Page card" entry
+     for the full rationale (which screens, why 16px, Login/Register status)
+     — not repeated here to avoid a second copy to keep in sync. */
+  --radius-card: 16px;
   /* Soft shadow (DESIGN.md Elevation & Depth, 2026-09-26) — low-opacity,
      generously blurred, applied alongside border hairlines/dashed rules,
      never replacing them. Applied directly on button-primary (Story 0.1),

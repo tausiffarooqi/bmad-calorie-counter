@@ -26,11 +26,19 @@ export default async function PreferencesPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
+    // justify-start, rounded-card, shadow-soft (2026-09-27): matches the
+    // Daily view's own top-alignment fix (app/page.tsx, same commit
+    // series) — this page's content is short enough that the previous
+    // justify-center visibly centered it, unlike the Daily view's usually-
+    // overflowing content — and the Page card treatment (DESIGN.md
+    // Components) every Warm Editorial Refresh mockup for this screen
+    // already showed. Login/Register keep their prior treatment for now
+    // (deferred-work.md).
+    <div className="flex flex-1 flex-col items-center justify-start gap-6 bg-background p-8 text-foreground">
       <div className="flex w-full max-w-sm flex-col gap-2">
         <BackToDailyViewLink />
       </div>
-      <div className="flex w-full max-w-sm flex-col gap-4 rounded-md border border-border bg-card p-6">
+      <div className="flex w-full max-w-sm flex-col gap-4 rounded-card border border-border bg-card p-6 shadow-soft">
         <h1 className="text-lg font-semibold">Account & Preferences</h1>
         <PreferencesForm
           initialName={profile.name}

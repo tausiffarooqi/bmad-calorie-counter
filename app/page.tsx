@@ -156,8 +156,9 @@ export default function Home() {
     // little content (the First-Login prompt branch, a fresh zero-Entries
     // day, or the loadError branch), not the common longer-content case
     // this previously masked the difference in. Direct user request;
-    // intentionally scoped to this page only — Login/Register/Preferences
-    // keep justify-center unchanged.
+    // Account/Preferences got the same fix shortly after (its own comment,
+    // preferences/page.tsx) — Login/Register still keep justify-center
+    // (deferred-work.md).
     <div className="flex flex-1 flex-col items-center justify-start gap-6 bg-background p-8 text-foreground">
       <div className="flex w-full justify-end gap-1">
         {/* Story 5.1: nav link to the new Historical Trends view (Code Map)

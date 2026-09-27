@@ -59,11 +59,19 @@ rounded:
   md: '10px'
   lg: '12px'
   xl: '20px'
+  card: '16px'
   full: '9999px'
   DEFAULT: '10px'
 spacing:
   # shadcn / Tailwind default 4-based scale inherited as-is; no overrides.
 components:
+  page-card:
+    background: '{colors.card}'
+    border: '{colors.border}'
+    radius: '{rounded.card}'
+    shadow: 'soft'
+    # Applied to Account/Preferences (2026-09-27). Login/Register keep this
+    # same spec but the code hasn't been updated yet — deferred-work.md.
   hero-card:
     background: '{colors.hero}'
     foreground: '{colors.hero-foreground}'
@@ -156,12 +164,13 @@ Refreshed 2026-09-26 — soft shadows are now allowed, reversing the original "n
 
 ## Shapes
 
-Soft but restrained: `{rounded.sm}` (8px) for buttons and inputs, `{rounded.md}` (10px) for the entries list and general cards, `{rounded.lg}` (12px) for the Recommendation card — its slightly larger radius signals "this is a featured element." `{rounded.xl}` (20px, added 2026-09-26) is reserved for the hero card alone — larger still, since it's the one surface on the Daily view meant to read as the primary focal point, not just "featured" alongside the Recommendation card. `{rounded.full}` reserved for status pills only, if any are introduced later.
+Soft but restrained: `{rounded.sm}` (8px) for buttons and inputs, `{rounded.md}` (10px) for the entries list and general cards, `{rounded.card}` (16px, added 2026-09-27) for the single-card wrapper on Login/Register/Account & Preferences — a whole-screen card reads softer/bigger than a card among several, `{rounded.lg}` (12px) for the Recommendation card — its slightly larger radius signals "this is a featured element." `{rounded.xl}` (20px, added 2026-09-26) is reserved for the hero card alone — larger still, since it's the one surface on the Daily view meant to read as the primary focal point, not just "featured" alongside the Recommendation card. `{rounded.full}` reserved for status pills only, if any are introduced later.
 
 ## Components
 
 Inherits shadcn defaults unchanged for: `Input`, `Dialog`, `Tabs`, `Avatar`, `Separator`, `Toast`. Brand-layer-overridden:
 
+- **Page card** (new, 2026-09-27) — `{colors.card}` background, `{colors.border}` outline, `{rounded.card}` (16px, distinct from the md/lg/xl scale — every Warm Editorial Refresh mockup for these three screens independently uses it), soft shadow. The single-card wrapper on Login, Register, and Account/Preferences — a bigger, softer radius than the general-purpose `{rounded.md}` cards elsewhere, signaling "this is the whole screen," not one card among several. Applied to Account/Preferences (using the existing `shadow-soft` token, whose 0.08 opacity matches `preferences-refresh.html` exactly); Login/Register haven't been updated in code yet (`deferred-work.md`) — **note for whoever does:** their own mockup (`auth-refresh.html`) uses a *different* shadow opacity, `rgba(39, 48, 46, 0.10)`, not `shadow-soft`'s 0.08 — reusing `shadow-soft` as-is there would under-shoot the approved mockup by 25%; a distinct token (or an inline override) is needed.
 - **Hero card** (new, 2026-09-26) — `{colors.hero}` (dark forest green) background, `{colors.hero-foreground}` text, `{rounded.xl}`, soft shadow (slightly more pronounced than other cards — see Elevation & Depth). The Remaining Calorie Budget's new home, replacing the old plain-number-on-page-background treatment. Layout: the Remaining Calorie Budget number stays large and bold — still `{typography.display-number}`, still `{colors.hero-foreground}`, a fact to be read quickly, exactly as before — with a smaller "/ N kcal target" caption in `{colors.hero-muted-foreground}` beside it. Below the number, a horizontal progress bar: track in a low-opacity tint of `{colors.hero-foreground}`, fill in `{colors.hero-accent}`, representing the portion of the Daily Calorie Target consumed so far. Two caption lines below the bar, both in `{colors.hero-muted-foreground}`: the Remaining Calorie Budget restated in words (e.g. "N kcal remaining") and the percentage of target consumed. **Over-Target State** behaves differently in one respect only: the bar visually caps at 100% width (never overflows its track), and its fill color does not change — still `{colors.hero-accent}`, never a warning color, consistent with FR-12/FR-18's "no alarm treatment" rule. The Remaining Calorie Budget number itself still goes negative in place, exactly as today.
 - **Button (primary)** — `{colors.primary}` fill, `{colors.primary-foreground}` text, `{rounded.sm}`, no border, 600-weight label text (2026-09-27 — brand-layer buttons read visibly bolder than shadcn's default 500/medium in every Warm Editorial Refresh mockup), a `{colors.primary}`-tinted shadow (2026-09-27 — `0 6px 16px color-mix(in srgb, {colors.primary} 25%, transparent)`, warmer than the generic soft shadow other cards use, matching every mockup's `.btn-primary`). Used for the single most-wanted action per screen (Add Photo, Log a meal, Log in, Create account).
 - **Button (secondary)** — `{colors.card}` fill, `{colors.foreground}` text, `{colors.border}` outline, `{rounded.sm}`, 600-weight label text (2026-09-27, same as primary), no shadow (outlined buttons stay flat — shadow is reserved for the primary action so it still reads as the single most-wanted one). Used for the lower-emphasis alternative action (Add Text, Not now, Skip).
