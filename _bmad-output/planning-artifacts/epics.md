@@ -43,6 +43,8 @@ FR-22: User can view a dashboard showing, for each day in the last 3 months, tot
 FR-23: The dashboard also shows simple aggregate stats over the 3-month window: number/percentage of days within target vs. over target, and average daily calories consumed. (Could-have.)
 FR-24: User can log out of the application, ending their current session. After logout, no authenticated page (Daily view, Preferences, Trends) is accessible until logging back in.
 FR-25: For a photo Entry, user sees a preview of the photo they just uploaded, from the moment it's picked through to when the estimate result is shown (in-progress, success, and retry states) — ephemeral to the current submission attempt only, not persisted anywhere.
+FR-26: User provides their Name when creating an account (required, alongside email/password); it can be changed later on the Preferences page. Existing accounts created before this capability shipped have no Name on file, and nothing forces them to set one.
+FR-27: The Daily view displays a persistent time-of-day greeting ("Good morning/afternoon/evening, {Name}") on every load — not just the first one of the Day — distinct from the First-Login prompt's own one-shot tone-adaptive message (FR-18), which continues to appear separately beneath this greeting. If the user has no Name on file, the greeting omits the name entirely rather than showing a placeholder.
 
 ### NonFunctional Requirements
 
@@ -78,15 +80,17 @@ NFR-9: Formal compliance/security hardening beyond FR-20/FR-21 is explicitly out
 ### UX Design Requirements
 
 **Design tokens**
-UX-DR1: Implement the Muted Earth Editorial color tokens as shadcn theme overrides — background `#EFEAE3`, foreground `#3A342C`, card `#F7F4EE`, card-foreground `#3A342C`, muted-foreground `#8C8272`, border `#D9D1C2`, input `#D9D1C2`, ring `#A85C42`, primary `#A85C42`, primary-foreground `#FBF3EC`, accent `#7C8B6F`, accent-foreground `#F7F4EE`. All other shadcn tokens (popover, secondary, destructive) stay at default — `destructive` is deliberately never used.
+UX-DR1: Implement the Warm Editorial Refresh color tokens (2026-09-26, supersedes the original Muted Earth Editorial palette) as shadcn theme overrides — background `#F7F6F2`, foreground `#27302E`, card `#FFFFFF`, card-foreground `#27302E`, muted-foreground `#69736D`, border `#E5E3DB`, input `#E5E3DB`, ring `#C66C4D`, primary `#C66C4D`, primary-foreground `#FFFFFF`, accent `#6C876E`, accent-foreground `#FFFFFF` — plus a new dedicated hero-surface token set reserved exclusively for the Hero card (UX-DR29): hero `#273B35`, hero-foreground `#FFFFFF`, hero-muted-foreground `#A8BCB0`, hero-accent `#E8A17F`. All other shadcn tokens (popover, secondary, destructive) stay at default — `destructive` is deliberately never used.
 UX-DR2: Implement typography tokens and load both web fonts — Inter (body 14px/400, label 12px/600 uppercase-tracking, display-number 52px/700) and Lora italic (recommendation role, 17px/400/1.35 line-height, italic).
-UX-DR3: Implement the radius scale — sm 8px (buttons, inputs), md 10px (entries list, general cards), lg 12px (Recommendation card), full 9999px (reserved for future status pills) — applied per the DESIGN.md.Components mapping.
-UX-DR4: No drop shadows anywhere in the UI — depth expressed only via border hairlines, dashed rules, and the background/card value shift; overrides shadcn's default shadow-on-hover.
+UX-DR3: Implement the radius scale — sm 8px (buttons, inputs), md 10px (entries list, general cards), lg 12px (Recommendation card), xl 20px (Hero card, 2026-09-26 addition), full 9999px (reserved for future status pills) — applied per the DESIGN.md.Components mapping.
+UX-DR4: Soft, low-opacity, generously-blurred shadows are used for depth on most cards (2026-09-26, supersedes the original "no drop shadows anywhere" rule) — always alongside border hairlines and dashed rules, never replacing them, and never hard-edged or Material-style elevation. The Hero card (UX-DR29) carries a slightly more pronounced shadow than other cards as the one deliberately featured surface; the in-progress indicator and secondary buttons stay flat (no shadow) by design.
 
 **Components**
-UX-DR5: Button (primary) — clay fill, cream text, sm radius, no border; the single most-wanted action per screen.
-UX-DR6: Button (secondary) — card fill, foreground text, border outline, sm radius; the lower-emphasis alternate action.
-UX-DR7: Entries list — one bordered container of rows (not per-entry cards), border dividers, md radius, chronological (most recent last), no edit/delete affordance in MVP.
+UX-DR5: Button (primary) — clay fill, cream text, sm radius, no border, soft shadow (2026-09-26); the single most-wanted action per screen.
+UX-DR6: Button (secondary) — card fill, foreground text, border outline, sm radius, no shadow; the lower-emphasis alternate action.
+UX-DR7: Entries list — one bordered container of rows (not per-entry cards), border dividers, md radius, soft shadow (2026-09-26), chronological (most recent last), no edit/delete affordance in MVP. Warm Editorial Refresh (2026-09-26): each row also shows an icon in a tinted circle and a time-derived meal-type label above the description — Breakfast/Lunch/Dinner for Meal-classified Entries (derived from the Entry's own timestamp, not a stored field), "Snack" (Cookie icon) for every Snack/Beverage Entry regardless of time of day.
+UX-DR29: Hero card (new, 2026-09-26) — the Remaining Calorie Budget's new home on the Daily view, replacing the plain-number-on-page-background treatment. Dark `{colors.hero}` background, `{rounded.xl}`, soft shadow. Layout: the large bold Remaining Calorie Budget number (unchanged display-number style) with a "/ N kcal target" caption beside it; a horizontal progress bar below (track = low-opacity hero-foreground tint, fill = `{colors.hero-accent}`) representing the portion of Daily Calorie Target consumed; two caption lines below the bar (remaining budget restated in words, percentage of target consumed). Over-Target State: the bar visually caps at 100% width and its fill never changes to a warning color — the budget number itself still goes negative in place, exactly as before this refresh (FR-12, FR-18).
+UX-DR30: Greeting header (new, 2026-09-26) — persistent on every Daily view load, not just first login: "Good morning/afternoon/evening, {Name}" derived from local hour (5am–12pm morning, 12pm–5pm afternoon, 5pm–5am evening, anchored to the same AD-5 day-start), omitting the name entirely when none is on file (FR-26, FR-27). Replaces the First-login prompt's own former "Good morning" line — the tone-adaptive message (FR-18, Story 4.2) now sits directly beneath this header instead of repeating a greeting inside the prompt card.
 UX-DR8: Recommendation card — card background, sage border, lg radius, recommendation typography. Renders 0–3 cards depending on remaining Meal Slot count (2 stacked during 5am–12pm: lunch + dinner; 1 from 12pm–10pm: dinner; 0 or 1 after 10pm per FR-11). Never renders alongside the Over-Target banner. Recommendation text is a deterministic lookup (AD-8) — the same key returns identical text on a different day; this must not be implemented or copy-written to imply the system reasoned about the specific Entry just logged.
 UX-DR9: Over-Target banner — card background, clay border and text, md radius. Replaces every Recommendation card at once when active; never shadcn's `destructive` styling.
 UX-DR10: Prompt card — card background, border outline, md radius; generic container for First-login prompt question+action pairs.
@@ -96,12 +100,12 @@ UX-DR13: Photo-only notice — small (12px) muted-foreground text near the Add P
 
 **Screens (Information Architecture)**
 UX-DR14: Login screen — email + password fields, link to Register, inline field-level failure messaging (no full-page error state).
-UX-DR15: Register screen — email + password + confirm password + Daily Calorie Target (pre-filled standard-adult default, editable) fields per FR-13; creates account and logs straight in (email confirmation disabled — no "check your email" waiting state); link to Login.
-UX-DR16: Daily view (home) screen — Remaining Calorie Budget in display-number style, Entries list (entirely omitted when empty, not shown as an empty state), Log buttons (Add Photo / Add Text), Recommendation card(s) or Over-Target banner as the last surface element(s). Single-column, mobile-first; layout unchanged at `≥md` (centered, no sidebar, no second column). Includes a Cold-load skeleton state while today's data loads.
+UX-DR15: Register screen — Name (new, 2026-09-26, required per FR-26) + email + password + confirm password + Daily Calorie Target (pre-filled standard-adult default, editable) fields per FR-13; creates account and logs straight in (email confirmation disabled — no "check your email" waiting state); link to Login.
+UX-DR16: Daily view (home) screen — Greeting header (new, 2026-09-26, UX-DR30), Remaining Calorie Budget in the new Hero card treatment (UX-DR29), Entries list (entirely omitted when empty, not shown as an empty state), Log buttons (Add Photo / Add Text), Recommendation card(s) or Over-Target banner as the last surface element(s). Single-column, mobile-first; layout unchanged at `≥md` (centered, no sidebar, no second column). Includes a Cold-load skeleton state while today's data loads.
 UX-DR17: Log Entry flow — photo capture (native camera/file picker) or text input (single-line-to-multiline), in-progress indicator while estimating, retry prompt (insufficient detail) or hard-failure prompt (call error), photo-only notice on the photo path; returns to Daily view on success.
-UX-DR18: First-login prompt — log-a-meal ask card always shown; breakfast-offer card shown as a second, separate card only before 10am (never merged into one compound question); tone-adaptive message about yesterday's performance, including the neutral-tone branch for a previous Day with zero Entries; declining any card always lands cleanly on the Daily view, never a dead end.
-UX-DR19: Account/Preferences screen — Daily Calorie Target (editable) and Dietary Preference (veg/non-veg) fields; inline save confirmation; inline field-level validation error state (e.g. non-numeric or zero target).
-UX-DR20: Historical Trends screen (Could-have) — 3-month day-by-day view + aggregate stats (days within/over target, average daily calories); a calm "nothing logged yet" state when there are zero Entries ever; days with no Entries omitted from the view (never shown as zero).
+UX-DR18: First-login prompt — log-a-meal ask card always shown; breakfast-offer card shown as a second, separate card only before 10am (never merged into one compound question); tone-adaptive message about yesterday's performance, including the neutral-tone branch for a previous Day with zero Entries; declining any card always lands cleanly on the Daily view, never a dead end. Shown beneath the persistent Greeting header (UX-DR30) rather than repeating its own greeting line.
+UX-DR19: Account/Preferences screen — Name (new, 2026-09-26, editable per FR-26), Daily Calorie Target (editable), and Dietary Preference (veg/non-veg) fields; inline save confirmation; inline field-level validation error state (e.g. non-numeric or zero target, or a blank Name).
+UX-DR20: Historical Trends screen (Could-have) — 3-month bar-chart histogram (2026-09-26, supersedes the original plain day-by-day text list — see UX-DR31) + aggregate stats (days within/over target, average daily calories); a calm "nothing logged yet" state when there are zero Entries ever; days with no Entries omitted from the view (never shown as zero).
 
 **Voice and tone**
 UX-DR21: All user-facing copy follows the "supportive, never shaming" rule (FR-18) — no alarm/red language or exclamation-heavy phrasing for Over-Target, no gamified praise/emoji for good days, same understated tone regardless of daily outcome. Apply the Do/Don't microcopy table in `EXPERIENCE.md` as the copy-review checklist for every user-facing string.
@@ -116,6 +120,7 @@ UX-DR26: The in-progress indicator's "Estimating…" label is readable by a scre
 **Interaction primitives**
 UX-DR27: Tap-first interaction model — no hover-only affordances, no required keyboard shortcuts; at most one primary + one secondary action per screen.
 UX-DR28: No infinite scroll (Entries list and Trends are both bounded datasets: single-Day / 3-month); no multi-step wizard for logging an Entry — one screen, one action.
+UX-DR31: Trend bar chart (new, 2026-09-26) — one bar per day, height = that day's total calories as a % of that day's own Daily Calorie Target (not a shared cross-day scale), with a dashed reference line at the 100%-of-target mark. Bars within target use a neutral fill; bars over target use `{colors.primary}` (terracotta) — same color as every other Over-Target reporting surface, never a distinct warning color.
 
 ### FR Coverage Map
 
@@ -144,6 +149,8 @@ FR-22: Epic 5 - 3-month trend view
 FR-23: Epic 5 - Trend summary stats
 FR-24: Epic 1 - Logout
 FR-25: Epic 2 - Photo preview during estimation
+FR-26: Epic 1 - Name capture and editing
+FR-27: Epic 4 - Personalized greeting header
 
 ## Epic List
 
@@ -152,8 +159,8 @@ Global, feature-independent visual and interaction contracts (design tokens, cro
 **UX-DRs covered:** UX-DR1, UX-DR2, UX-DR3, UX-DR4, UX-DR25, UX-DR27, UX-DR28
 
 ### Epic 1: Account & Profile Setup
-Users can create an account, log in, log out, and have their Daily Calorie Target and Dietary Preference captured — the foundation every other epic needs to attribute data to "this user, today."
-**FRs covered:** FR-13, FR-19, FR-20, FR-24
+Users can create an account, log in, log out, and have their Name, Daily Calorie Target, and Dietary Preference captured — the foundation every other epic needs to attribute data to "this user, today."
+**FRs covered:** FR-13, FR-19, FR-20, FR-24, FR-26
 
 ### Epic 2: Meal Logging & Estimation
 Users can submit an Entry by photo or text and get it estimated, classified into a stored record, timestamped, with the photo discarded after analysis, and see a preview of a submitted photo while it's estimated. Complete and demoable on its own — it records what was eaten and its estimated calories, without yet computing a running budget or recommending anything.
@@ -164,11 +171,11 @@ Builds on Epic 2's stored Entries: classifies each as Meal vs. Snack/Beverage, c
 **FRs covered:** FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-14
 
 ### Epic 4: Daily Engagement
-Users get a proactive first-login check-in — remaining budget, a log-a-meal prompt, a conditional breakfast offer before 10am, and a tone-adaptive message about yesterday's performance.
-**FRs covered:** FR-15, FR-16, FR-17, FR-18
+Users get a proactive first-login check-in — a persistent personalized greeting, remaining budget in the new Hero card treatment, a log-a-meal prompt, a conditional breakfast offer before 10am, and a tone-adaptive message about yesterday's performance.
+**FRs covered:** FR-15, FR-16, FR-17, FR-18, FR-27
 
 ### Epic 5: Historical Trends
-Users can view a 3-month history of their calorie tracking with simple aggregate stats. Could-have; stands alone as a reporting layer computed directly from Epic 1's Daily Calorie Target and Epic 2's stored Entries — it doesn't need Epic 3's live budget/recommendation engine, which persists nothing for Epic 5 to read.
+Users can view a 3-month history of their calorie tracking, rendered as a bar-chart histogram, with simple aggregate stats. Could-have; stands alone as a reporting layer computed directly from Epic 1's Daily Calorie Target and Epic 2's stored Entries — it doesn't need Epic 3's live budget/recommendation engine, which persists nothing for Epic 5 to read.
 **FRs covered:** FR-22, FR-23
 
 ## Epic 0: UX Foundation
@@ -187,20 +194,20 @@ So that the experience feels considered rather than generic or mismatched.
 **Then** this story includes the project scaffold — Next.js 16.3.5 (App Router) on Node.js 24, TypeScript 6.0.3 (downgraded from 7.0.2 during implementation — see Architecture Deferred list), Tailwind CSS 4.3.3 — plus shadcn/ui initialized as the component foundation (moved here from Story 1.1, since tokens can't be configured onto a project that doesn't exist yet; Story 1.1 keeps the Supabase connection, Drizzle setup, and `profiles` table, which build on top of this)
 
 **Given** the shadcn/ui + Tailwind foundation from Architecture
-**When** the Muted Earth Editorial color tokens are applied (background `#EFEAE3`, foreground `#3A342C`, card `#F7F4EE`, card-foreground `#3A342C`, muted-foreground `#8C8272`, border `#D9D1C2`, input `#D9D1C2`, ring `#A85C42`, primary `#A85C42`, primary-foreground `#FBF3EC`, accent `#7C8B6F`, accent-foreground `#F7F4EE`)
-**Then** every screen built in later epics inherits these tokens automatically rather than hardcoding its own colors (UX-DR1)
+**When** the Warm Editorial Refresh color tokens are applied (2026-09-26, supersedes the original Muted Earth Editorial palette — background `#F7F6F2`, foreground `#27302E`, card `#FFFFFF`, card-foreground `#27302E`, muted-foreground `#69736D`, border `#E5E3DB`, input `#E5E3DB`, ring `#C66C4D`, primary `#C66C4D`, primary-foreground `#FFFFFF`, accent `#6C876E`, accent-foreground `#FFFFFF`, plus the new hero-surface set: hero `#273B35`, hero-foreground `#FFFFFF`, hero-muted-foreground `#A8BCB0`, hero-accent `#E8A17F`)
+**Then** every screen built in later epics inherits these tokens automatically rather than hardcoding its own colors, and the hero token set is available for Story 4.1's Hero card (UX-DR1)
 
 **Given** the typography tokens (Inter for body/label/display-number; Lora italic for the recommendation role)
 **When** both web fonts are loaded and wired to their token roles
 **Then** any component using the `recommendation` role renders in italic Lora, and everything else renders in Inter, with no per-screen font overrides (UX-DR2)
 
-**Given** the radius scale (sm 8px, md 10px, lg 12px, full 9999px)
+**Given** the radius scale (sm 8px, md 10px, lg 12px, xl 20px, full 9999px)
 **When** components apply their designated radius token
-**Then** buttons/inputs use sm, general cards use md, the Recommendation card uses lg — consistently across every screen (UX-DR3)
+**Then** buttons/inputs use sm, general cards use md, the Recommendation card uses lg, the Hero card uses xl — consistently across every screen (UX-DR3)
 
-**Given** the "no drop shadows" rule
-**When** any card, button, or container is styled
-**Then** depth is expressed only via border/dashed-rule/background-value-shift — shadcn's default shadow-on-hover is explicitly overridden to render nothing (UX-DR4)
+**Given** the Warm Editorial Refresh's soft-shadow rule (2026-09-26, supersedes the original "no drop shadows" rule)
+**When** a card, button, or container is styled
+**Then** most cards (button-primary, entries list, Recommendation card, Over-Target banner, prompt card, Hero card) carry a soft, low-opacity, generously-blurred shadow alongside their existing border/dashed-rule treatment — never a hard-edged or Material-style shadow — while the in-progress indicator and secondary button stay flat (no shadow) by design (UX-DR4)
 
 ### Story 0.2: Cross-Cutting Interaction & Accessibility Primitives
 
@@ -234,28 +241,28 @@ Users can create an account, log in, log out, and have their Daily Calorie Targe
 ### Story 1.1: User Registration
 
 As a user,
-I want to create an account with my email, password, and Daily Calorie Target,
-So that the app can track my calorie budget against my own target from day one.
+I want to create an account with my name, email, password, and Daily Calorie Target,
+So that the app can track my calorie budget against my own target from day one, and greet me by name.
 
 **Acceptance Criteria:**
 
 **Given** I am not logged in and open the Register screen
-**When** I enter a valid email, password, confirm-password, and accept or edit the pre-filled Daily Calorie Target
-**Then** my account is created in Supabase Auth, a `profiles` row is created linked to my user id with the entered Daily Calorie Target
+**When** I enter my Name, a valid email, password, confirm-password, and accept or edit the pre-filled Daily Calorie Target
+**Then** my account is created in Supabase Auth, a `profiles` row is created linked to my user id with the entered Name and Daily Calorie Target
 **And** I am logged in immediately — no email-confirmation step (Architecture AD-3, EXPERIENCE.md)
 
 **Given** the Register screen loads
 **When** no Daily Calorie Target has been entered yet
 **Then** the field is pre-filled with a standard adult default value (e.g. ~2000 kcal) that I can accept or change (FR-13 `[ASSUMPTION]`)
 
-**Given** I enter an email that's already registered, mismatched passwords, or a non-numeric/zero Daily Calorie Target
+**Given** I leave the Name field blank, enter an email that's already registered, mismatched passwords, or a non-numeric/zero Daily Calorie Target
 **When** I submit the form
-**Then** I see an inline, field-level error message (UX-DR15) and no account is created
+**Then** I see an inline, field-level error message (UX-DR15) and no account is created (FR-26)
 
 **Given** I successfully register
 **Then** the screen includes a link to the Login screen, and follows UX-DR5/UX-DR6 (buttons), UX-DR22/UX-DR24 (tap targets, visible labels)
 
-**And** this story adds Drizzle ORM 0.45.2 and the self-hosted Supabase connection (local dev via Supabase CLI) on top of Story 0.1's project scaffold, plus the `profiles` table (user_id PK/FK to `auth.users`, daily_calorie_target, dietary_preference defaulting to `'non_vegetarian'` until changed in Story 1.3)
+**And** this story adds Drizzle ORM 0.45.2 and the self-hosted Supabase connection (local dev via Supabase CLI) on top of Story 0.1's project scaffold, plus the `profiles` table (user_id PK/FK to `auth.users`, name, daily_calorie_target, dietary_preference defaulting to `'non_vegetarian'` until changed in Story 1.3) — `name` is nullable at the column level so existing rows created before this story remain valid (FR-26 consequence), even though the Register form itself requires it going forward
 
 ### Story 1.2: User Login
 
@@ -286,14 +293,22 @@ So that I can access my daily tracking data.
 ### Story 1.3: Manage Daily Calorie Target & Dietary Preference
 
 As a user,
-I want to view and update my Daily Calorie Target and Dietary Preference on an Account/Preferences screen,
-So that my budget and recommendations stay accurate as my needs change.
+I want to view and update my Name, Daily Calorie Target, and Dietary Preference on an Account/Preferences screen,
+So that my budget, recommendations, and greeting stay accurate as my needs change.
 
 **Acceptance Criteria:**
 
 **Given** I am logged in and navigate to Account/Preferences
 **When** the screen loads
-**Then** I see my current Daily Calorie Target and Dietary Preference (vegetarian/non-vegetarian) values
+**Then** I see my current Name (or a blank field if I registered before this capability existed, FR-26), Daily Calorie Target, and Dietary Preference (vegetarian/non-vegetarian) values
+
+**Given** I change my Name to a non-blank value
+**When** I save
+**Then** the `profiles` row's `name` is updated and I see an inline save confirmation next to the field (UX-DR19), using the same per-field-save pattern as Daily Calorie Target below — this is the only way a pre-existing account with no Name on file can acquire one (FR-26)
+
+**Given** I try to save a blank Name
+**When** I submit
+**Then** I see an inline field-level validation error and the value is not saved (FR-26)
 
 **Given** I change my Daily Calorie Target to a valid positive number
 **When** I save
@@ -434,7 +449,15 @@ So that I can review what I've eaten without having to remember it myself.
 
 **Given** I have logged one or more Entries today
 **When** I view the Daily view
-**Then** I see them in one bordered container, as rows (not individual cards), each row showing the meal/item description and its calorie value (UX-DR7)
+**Then** I see them in one bordered container, as rows (not individual cards), each row showing an icon in a tinted circle, a meal-type label, the meal/item description, and its calorie value (UX-DR7)
+
+**Given** an Entry is classified as a Meal (FR-7)
+**When** its row renders
+**Then** its meal-type label (Breakfast/Lunch/Dinner) and icon are derived from the Entry's own timestamp, not the current time or a stored field — Breakfast 5am–11am, Lunch 11am–4pm, Dinner 4pm–5am next day (`[ASSUMPTION]`, distinct from FR-10/FR-11's Meal Slot windows and the Greeting header's own boundaries, Story 4.5)
+
+**Given** an Entry is classified as a Snack/Beverage (FR-7)
+**When** its row renders
+**Then** it always shows the "Snack" label and Cookie icon, regardless of what time it was logged (UX-DR7)
 
 **Given** multiple Entries are logged
 **When** the list renders
@@ -640,6 +663,13 @@ So that I have a reason to check in even when I'm not actively logging something
 **Given** the First-login prompt is shown
 **Then** it follows the Prompt card visual treatment (UX-DR10) and button conventions (UX-DR5/6)
 
+**Given** the Daily view renders the Remaining Calorie Budget, on any load (first login or a later one that day)
+**Then** it renders in the Hero card treatment (2026-09-26, UX-DR29) — dark hero-surface background, the budget number still large/bold/unchanged in style, a "/ N kcal target" caption, and a horizontal progress bar showing the portion of Daily Calorie Target consumed, with two caption lines below it (remaining budget in words, percentage consumed) — replacing the previous plain-number-on-page-background treatment
+
+**Given** I am in the Over-Target State (FR-12)
+**When** the Hero card renders
+**Then** the progress bar visually caps at 100% width and its fill color does not change to a warning color — the budget number itself still goes negative in place, exactly as before this refresh (UX-DR29, FR-18)
+
 **Given** I tap "Log a meal now?" affirmatively
 **When** I proceed
 **Then** I am taken into the Log Entry flow (Epic 2) as if I'd tapped Add Photo/Add Text from the Daily view
@@ -715,6 +745,30 @@ So that I get guidance for a meal slot that would otherwise never get its own re
 **When** the First-login prompt would otherwise show a breakfast offer
 **Then** no breakfast offer appears — Over-Target precedence (Story 3.5) suppresses it exactly like every other recommendation path (FR-12 over FR-17)
 
+### Story 4.5: Personalized Greeting Header
+
+As a user,
+I want the Daily view to greet me by name based on the time of day,
+So that the app feels personal every time I open it, not just on my first login.
+
+**Acceptance Criteria:**
+
+**Given** I have a Name on file (Story 1.1/1.3)
+**When** I load the Daily view, at any time and on any load — not just my first one of the Day
+**Then** I see a persistent greeting header reading "Good morning, {Name}", "Good afternoon, {Name}", or "Good evening, {Name}", chosen from the local hour: 5am–12pm morning, 12pm–5pm afternoon, 5pm–5am (next day) evening — a greeting-specific boundary set, distinct from FR-10/FR-11's Meal Slot windows, anchored to the same AD-5 5am day-start (FR-27, UX-DR30)
+
+**Given** I have no Name on file (an account created before Story 1.1's Name field existed, per FR-26)
+**When** the greeting renders
+**Then** it omits the name entirely (e.g. "Good afternoon.") rather than showing a placeholder or blank space (FR-27)
+
+**Given** this is my first login of a new Day (Story 4.1's First-login prompt is also shown)
+**When** both surfaces render
+**Then** the greeting header appears above the First-login prompt, which no longer repeats its own "Good morning" line — Story 4.2's tone-adaptive message about yesterday sits directly beneath the greeting header instead (FR-27, UX-DR30)
+
+**Given** it is a later load the same Day (First-login prompt does not reappear, Story 4.1)
+**When** I return to the Daily view
+**Then** the greeting header still renders, updated for the current time of day if it has changed since I last opened the app (FR-27 — persistent, not a one-shot first-login-only element)
+
 ## Epic 5: Historical Trends
 
 Users can view a 3-month history of their calorie tracking with simple aggregate stats. Could-have; stands alone as a reporting layer computed directly from Epic 1's Daily Calorie Target and Epic 2's stored Entries — it doesn't need Epic 3's live budget/recommendation engine, which persists nothing for Epic 5 to read.
@@ -729,11 +783,15 @@ So that I can spot patterns beyond today's snapshot.
 
 **Given** I navigate to Historical Trends
 **When** the screen loads
-**Then** I see, for each day in the last 3 months, total calories consumed against that day's Daily Calorie Target (FR-22)
+**Then** I see, for each day in the last 3 months, a bar-chart histogram (2026-09-26, UX-DR31 — supersedes the original plain day-by-day text list) showing total calories consumed against that day's Daily Calorie Target (FR-22)
 
 **Given** a day in the window has at least one logged Entry
-**When** the view renders
-**Then** that day shows real data — Day boundary per AD-5, not calendar-date math
+**When** its bar renders
+**Then** that day shows real data — Day boundary per AD-5, not calendar-date math — with bar height as that day's total calories expressed as a % of that day's own Daily Calorie Target (not a shared cross-day scale), and a dashed reference line at the 100%-of-target mark (UX-DR31)
+
+**Given** a day's total calories are within its Daily Calorie Target
+**When** its bar renders
+**Then** it uses a neutral fill; a day that went over target uses `{colors.primary}` (terracotta) — the same color used everywhere else for Over-Target reporting, never a distinct warning color (UX-DR31, FR-18)
 
 **Given** a day in the window has zero logged Entries
 **When** the view renders
