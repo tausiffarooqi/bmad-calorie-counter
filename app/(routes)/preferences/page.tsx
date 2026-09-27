@@ -33,6 +33,7 @@ export default async function PreferencesPage() {
       <div className="flex w-full max-w-sm flex-col gap-4 rounded-md border border-border bg-card p-6">
         <h1 className="text-lg font-semibold">Account & Preferences</h1>
         <PreferencesForm
+          initialName={profile.name}
           initialDailyCalorieTarget={profile.dailyCalorieTarget}
           initialDietaryPreference={profile.dietaryPreference}
         />

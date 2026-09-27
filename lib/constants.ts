@@ -10,6 +10,23 @@ export const MAX_DAILY_CALORIE_TARGET = 20_000;
 // below.
 export const MAX_NAME_LENGTH = 100;
 
+// Single source of truth for the server-side Name check — shared by
+// /api/auth/register and /api/preferences (Story 1.3) instead of each route
+// re-deriving the same typeof/blank/length checks with its own copy.
+export function validateName(value: unknown): { ok: true; name: string } | { ok: false; message: string } {
+  if (typeof value !== "string") {
+    return { ok: false, message: "Name is required." };
+  }
+  const name = value.trim();
+  if (!name) {
+    return { ok: false, message: "Name is required." };
+  }
+  if (name.length > MAX_NAME_LENGTH) {
+    return { ok: false, message: `Name must be ${MAX_NAME_LENGTH} characters or fewer.` };
+  }
+  return { ok: true, name };
+}
+
 export const DIETARY_PREFERENCES = ["vegetarian", "non_vegetarian"] as const;
 export type DietaryPreference = (typeof DIETARY_PREFERENCES)[number];
 

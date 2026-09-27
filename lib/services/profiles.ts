@@ -26,10 +26,19 @@ export async function getProfile(userId: string) {
   return profile;
 }
 
-// Both updates `.returning()` and report whether a row actually matched —
-// a `profiles` row missing for an authenticated user (deleted, corrupted,
+// All three below `.returning()` and report whether a row actually matched
+// — a `profiles` row missing for an authenticated user (deleted, corrupted,
 // never created) would otherwise UPDATE zero rows silently, and the caller
 // would report success with nothing written.
+export async function updateName(userId: string, name: string) {
+  const rows = await db
+    .update(profiles)
+    .set({ name })
+    .where(eq(profiles.userId, userId))
+    .returning({ userId: profiles.userId });
+  return rows.length > 0;
+}
+
 export async function updateDailyCalorieTarget(userId: string, dailyCalorieTarget: number) {
   const rows = await db
     .update(profiles)

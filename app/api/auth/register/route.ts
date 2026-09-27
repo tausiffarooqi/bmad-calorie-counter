@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createProfile } from "@/lib/services/profiles";
-import { MAX_DAILY_CALORIE_TARGET, MAX_NAME_LENGTH } from "@/lib/constants";
+import { MAX_DAILY_CALORIE_TARGET, validateName } from "@/lib/constants";
 
 export async function POST(request: Request) {
   let body: { name?: string; email?: string; password?: string; dailyCalorieTarget?: number };
@@ -16,37 +16,16 @@ export async function POST(request: Request) {
   }
   const { email, password, dailyCalorieTarget } = body;
 
-  // typeof-checked before calling a string method — body is untrusted JSON,
-  // not a runtime-validated shape, and `.trim()` on a non-string (number,
-  // object, array) would throw an unhandled 500 instead of a controlled 400.
-  if (typeof body.name !== "string") {
+  // Single shared check (lib/constants.ts) — also used by /api/preferences
+  // (Story 1.3) — covers the typeof/blank/length cases in one place.
+  const nameResult = validateName(body.name);
+  if (!nameResult.ok) {
     return NextResponse.json(
-      { error: { code: "invalid_name", message: "Name is required." } },
+      { error: { code: "invalid_name", message: nameResult.message } },
       { status: 400 }
     );
   }
-  // Trimmed before validating/persisting — a whitespace-only value is
-  // treated the same as blank (FR-26, Boundaries & Constraints).
-  const name = body.name.trim();
-
-  if (!name) {
-    return NextResponse.json(
-      { error: { code: "invalid_name", message: "Name is required." } },
-      { status: 400 }
-    );
-  }
-
-  if (name.length > MAX_NAME_LENGTH) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "invalid_name",
-          message: `Name must be ${MAX_NAME_LENGTH} characters or fewer.`,
-        },
-      },
-      { status: 400 }
-    );
-  }
+  const name = nameResult.name;
 
   if (!email || !password) {
     return NextResponse.json(

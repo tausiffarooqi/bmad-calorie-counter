@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { updateDailyCalorieTarget, updateDietaryPreference } from "@/lib/services/profiles";
-import { MAX_DAILY_CALORIE_TARGET, DIETARY_PREFERENCES, type DietaryPreference } from "@/lib/constants";
+import { updateDailyCalorieTarget, updateDietaryPreference, updateName } from "@/lib/services/profiles";
+import {
+  MAX_DAILY_CALORIE_TARGET,
+  DIETARY_PREFERENCES,
+  validateName,
+  type DietaryPreference,
+} from "@/lib/constants";
 
 function isDietaryPreference(value: unknown): value is DietaryPreference {
   return (
@@ -10,7 +15,7 @@ function isDietaryPreference(value: unknown): value is DietaryPreference {
 }
 
 export async function PATCH(request: Request) {
-  let body: { dailyCalorieTarget?: unknown; dietaryPreference?: unknown };
+  let body: { name?: unknown; dailyCalorieTarget?: unknown; dietaryPreference?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -20,17 +25,19 @@ export async function PATCH(request: Request) {
     );
   }
 
+  const hasName = body.name !== undefined;
   const hasTarget = body.dailyCalorieTarget !== undefined;
   const hasPreference = body.dietaryPreference !== undefined;
 
-  // XOR — each field saves independently per the I/O matrix, never both at
-  // once.
-  if (hasTarget === hasPreference) {
+  // Exactly one of the three fields saves independently per the I/O
+  // matrix, never more than one at once (Story 1.3 generalizes the
+  // original two-field XOR to three).
+  if ([hasName, hasTarget, hasPreference].filter(Boolean).length !== 1) {
     return NextResponse.json(
       {
         error: {
           code: "invalid_input",
-          message: "Provide exactly one of dailyCalorieTarget or dietaryPreference.",
+          message: "Provide exactly one of name, dailyCalorieTarget, or dietaryPreference.",
         },
       },
       { status: 400 }
@@ -47,6 +54,42 @@ export async function PATCH(request: Request) {
       { error: { code: "unauthenticated", message: "You must be logged in." } },
       { status: 401 }
     );
+  }
+
+  if (hasName) {
+    const nameResult = validateName(body.name);
+    if (!nameResult.ok) {
+      return NextResponse.json(
+        { error: { code: "invalid_name", message: nameResult.message } },
+        { status: 400 }
+      );
+    }
+
+    let updated: boolean;
+    try {
+      updated = await updateName(user.id, nameResult.name);
+    } catch (error) {
+      console.error("Failed to update name:", error);
+      return NextResponse.json(
+        {
+          error: {
+            code: "update_failed",
+            message: "Something went wrong saving your name — try again.",
+          },
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!updated) {
+      console.error("updateName matched no row for user:", user.id);
+      return NextResponse.json(
+        { error: { code: "profile_not_found", message: "Couldn't find your account — try logging in again." } },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ ok: true });
   }
 
   if (hasTarget) {

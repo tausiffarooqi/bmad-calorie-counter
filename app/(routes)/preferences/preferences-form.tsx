@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { MAX_DAILY_CALORIE_TARGET, type DietaryPreference } from "@/lib/constants";
+import { MAX_DAILY_CALORIE_TARGET, MAX_NAME_LENGTH, type DietaryPreference } from "@/lib/constants";
 import { isUnauthenticatedErrorBody, redirectToLogin } from "@/lib/handle-session-expiry";
 
 type PatchResult = { ok: true } | { ok: false; message: string };
@@ -47,16 +47,19 @@ async function patchPreferences(body: Record<string, unknown>): Promise<PatchRes
 }
 
 type Props = {
+  initialName: string | null;
   initialDailyCalorieTarget: number;
   initialDietaryPreference: string;
 };
 
 export function PreferencesForm({
+  initialName,
   initialDailyCalorieTarget,
   initialDietaryPreference,
 }: Props) {
   return (
     <div className="flex flex-col gap-6">
+      <NameField initialValue={initialName ?? ""} />
       <DailyCalorieTargetField initialValue={initialDailyCalorieTarget} />
       <DietaryPreferenceField
         // The DB default (Story 1.1) is 'non_vegetarian' — any unexpected
@@ -65,6 +68,85 @@ export function PreferencesForm({
         initialValue={initialDietaryPreference === "vegetarian" ? "vegetarian" : "non_vegetarian"}
       />
     </div>
+  );
+}
+
+function NameField({ initialValue }: { initialValue: string }) {
+  const [value, setValue] = useState(initialValue);
+  const [error, setError] = useState<string | undefined>();
+  const [saved, setSaved] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting) return;
+    setError(undefined);
+    setSaved(false);
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setError("Name is required.");
+      return;
+    }
+    if (trimmed.length > MAX_NAME_LENGTH) {
+      setError(`Name must be ${MAX_NAME_LENGTH} characters or fewer.`);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const result = await patchPreferences({ name: trimmed });
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      // Reflects the trimmed value back into the field — otherwise typing
+      // " Alex " persists "Alex" server-side but leaves the untrimmed
+      // whitespace visibly still in the input until the next page load.
+      setValue(trimmed);
+      setSaved(true);
+    } catch {
+      setError("Couldn't reach the server — check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-1.5" noValidate>
+      <Label htmlFor="name">Name</Label>
+      <div className="flex items-center gap-2">
+        <Input
+          id="name"
+          type="text"
+          autoComplete="name"
+          placeholder="e.g. Alex"
+          maxLength={MAX_NAME_LENGTH}
+          required
+          disabled={submitting}
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setSaved(false);
+          }}
+          aria-invalid={!!error}
+          aria-describedby={error ? "name-error" : saved ? "name-saved" : undefined}
+        />
+        <Button type="submit" variant="outline" disabled={submitting}>
+          {submitting ? "Saving…" : "Save"}
+        </Button>
+      </div>
+      {error && (
+        <p id="name-error" role="alert" className="text-sm text-primary">
+          {error}
+        </p>
+      )}
+      {saved && !error && (
+        <p id="name-saved" role="status" className="text-sm text-foreground">
+          Saved.
+        </p>
+      )}
+    </form>
   );
 }
 
