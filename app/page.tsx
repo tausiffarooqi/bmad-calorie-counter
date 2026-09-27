@@ -368,8 +368,13 @@ export default function Home() {
               </p>
             </div>
           ))}
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="flex gap-3">
+          <div className="flex w-full max-w-sm flex-col items-center gap-1.5">
+            {/* Full-width, evenly-split row (2026-09-27, DESIGN.md UX-DR5/
+                UX-DR6) — each Button carries its own flex-1 sizing.
+                gap-3 unchanged from before this fix — EXPERIENCE.md doesn't
+                specify an exact gap value, so this keeps the pre-existing
+                spacing rather than introducing a new undocumented one. */}
+            <div className="flex w-full gap-3">
               <LogPhotoDialog onSuccess={bumpRefreshKey} />
               <LogEntryDialog onSuccess={bumpRefreshKey} />
             </div>

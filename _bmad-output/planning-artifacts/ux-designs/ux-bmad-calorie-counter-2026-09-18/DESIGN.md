@@ -3,7 +3,7 @@ name: 'Calorie Tracker MVP'
 description: 'Solo-use calorie tracking prototype — calm, editorial, notebook-like register. shadcn/ui on Next.js + Tailwind; this DESIGN.md specifies the brand-layer delta only.'
 status: final
 created: '2026-09-18'
-updated: '2026-09-26'
+updated: '2026-09-27'
 colors:
   # Warm Editorial Refresh (2026-09-26) — palette adapted from a Vercel v0
   # concept the user brought in (see imports/vercel-v0-health-tracker-agent/),
@@ -76,17 +76,20 @@ components:
     foreground: '{colors.primary-foreground}'
     radius: '{rounded.sm}'
     border: 'none'
-    shadow: 'soft'
+    fontWeight: '600'
+    shadow: 'soft-primary'
   button-secondary:
     background: '{colors.card}'
     foreground: '{colors.foreground}'
     radius: '{rounded.sm}'
     border: '{colors.border}'
+    fontWeight: '600'
   entries-list:
     background: '{colors.card}'
     border: '{colors.border}'
     radius: '{rounded.md}'
     shadow: 'soft'
+    perEntry: true
   recommendation-card:
     background: '{colors.card}'
     border: '{colors.accent}'
@@ -149,7 +152,7 @@ shadcn / Tailwind's default 4-based spacing scale, inherited as-is — no produc
 
 ## Elevation & Depth
 
-Refreshed 2026-09-26 — soft shadows are now allowed, reversing the original "no drop shadows anywhere" rule. Every shadow stays low-opacity and generously blurred (matching the imported v0 concept's own restraint — nothing sharp, nothing that reads as a hard-edged panel or a Material-style elevation system). `{colors.border}` hairlines and dashed rules are still used alongside shadows, not replaced by them — the two now work together: borders define a card's edge precisely, shadows give it a gentle lift off the page. The hero card (see Components) carries a slightly more pronounced shadow than other cards, since it's the one deliberately "featured" surface on the Daily view; every other shadowed component uses the same soft treatment.
+Refreshed 2026-09-26 — soft shadows are now allowed, reversing the original "no drop shadows anywhere" rule. Every shadow stays low-opacity and generously blurred (matching the imported v0 concept's own restraint — nothing sharp, nothing that reads as a hard-edged panel or a Material-style elevation system). `{colors.border}` hairlines and dashed rules are still used alongside shadows, not replaced by them — the two now work together: borders define a card's edge precisely, shadows give it a gentle lift off the page. The hero card (see Components) carries a slightly more pronounced shadow than other cards, since it's the one deliberately "featured" surface on the Daily view; every other shadowed component uses the same soft treatment — except the primary button, which carries its own `{colors.primary}`-tinted "soft-primary" shadow (2026-09-27) instead of the neutral dark tint every card uses, so its lift reads warm rather than shadow-gray, matching every mockup's `.btn-primary`.
 
 ## Shapes
 
@@ -160,9 +163,10 @@ Soft but restrained: `{rounded.sm}` (8px) for buttons and inputs, `{rounded.md}`
 Inherits shadcn defaults unchanged for: `Input`, `Dialog`, `Tabs`, `Avatar`, `Separator`, `Toast`. Brand-layer-overridden:
 
 - **Hero card** (new, 2026-09-26) — `{colors.hero}` (dark forest green) background, `{colors.hero-foreground}` text, `{rounded.xl}`, soft shadow (slightly more pronounced than other cards — see Elevation & Depth). The Remaining Calorie Budget's new home, replacing the old plain-number-on-page-background treatment. Layout: the Remaining Calorie Budget number stays large and bold — still `{typography.display-number}`, still `{colors.hero-foreground}`, a fact to be read quickly, exactly as before — with a smaller "/ N kcal target" caption in `{colors.hero-muted-foreground}` beside it. Below the number, a horizontal progress bar: track in a low-opacity tint of `{colors.hero-foreground}`, fill in `{colors.hero-accent}`, representing the portion of the Daily Calorie Target consumed so far. Two caption lines below the bar, both in `{colors.hero-muted-foreground}`: the Remaining Calorie Budget restated in words (e.g. "N kcal remaining") and the percentage of target consumed. **Over-Target State** behaves differently in one respect only: the bar visually caps at 100% width (never overflows its track), and its fill color does not change — still `{colors.hero-accent}`, never a warning color, consistent with FR-12/FR-18's "no alarm treatment" rule. The Remaining Calorie Budget number itself still goes negative in place, exactly as today.
-- **Button (primary)** — `{colors.primary}` fill, `{colors.primary-foreground}` text, `{rounded.sm}`, no border, soft shadow. Used for the single most-wanted action per screen (Add Photo, Log a meal).
-- **Button (secondary)** — `{colors.card}` fill, `{colors.foreground}` text, `{colors.border}` outline, `{rounded.sm}`, no shadow (outlined buttons stay flat — shadow is reserved for the primary action so it still reads as the single most-wanted one). Used for the lower-emphasis alternative action (Add Text, Not now, Skip).
-- **Entries list** — `{colors.card}` background, `{colors.border}` row dividers, `{rounded.md}`, soft shadow. No card-per-entry; entries are rows in one bordered container, keeping the page from feeling like a stack of dashboard cards.
+- **Button (primary)** — `{colors.primary}` fill, `{colors.primary-foreground}` text, `{rounded.sm}`, no border, 600-weight label text (2026-09-27 — brand-layer buttons read visibly bolder than shadcn's default 500/medium in every Warm Editorial Refresh mockup), a `{colors.primary}`-tinted shadow (2026-09-27 — `0 6px 16px color-mix(in srgb, {colors.primary} 25%, transparent)`, warmer than the generic soft shadow other cards use, matching every mockup's `.btn-primary`). Used for the single most-wanted action per screen (Add Photo, Log a meal, Log in, Create account).
+- **Button (secondary)** — `{colors.card}` fill, `{colors.foreground}` text, `{colors.border}` outline, `{rounded.sm}`, 600-weight label text (2026-09-27, same as primary), no shadow (outlined buttons stay flat — shadow is reserved for the primary action so it still reads as the single most-wanted one). Used for the lower-emphasis alternative action (Add Text, Not now, Skip).
+- **Button (CTA size)** (new, 2026-09-27) — a taller ~44px variant of either Button (primary) or Button (secondary), reserved for the one full-width, page-level call-to-action row in the app: the Daily view's Add Photo/Add Text pair, split evenly. Every other button in the app (inline Save, dialog submit, icon nav, First-Login prompt/Breakfast offer actions) keeps the default ~32px height — a full-app button-height consistency pass is deferred, not decided here.
+- **Entries list** — `{colors.card}` background, `{rounded.md}`, soft shadow. Warm Editorial Refresh (2026-09-27, supersedes the original "one bordered container of rows" treatment): each logged Entry is its own separate row-card — `{colors.border}` outline, `{rounded.md}`, 8px vertical gap between cards (no shared container, no divider lines) — matching every Warm Editorial Refresh mockup exactly. The "not individually shadowed like a dashboard widget" concern this rule originally guarded against no longer applies now that shadows are a deliberately restrained, uniform treatment across every card in the app, not a special emphasis.
 - **Recommendation card** — `{colors.card}` background, `{colors.accent}` border (the only place accent appears as a border color), `{rounded.lg}`, soft shadow, body text in `{typography.recommendation}`.
 - **Over-Target banner** — `{colors.card}` background, `{colors.primary}` border and text, `{rounded.md}`, soft shadow. Explicitly not shadcn's `destructive` styling.
 - **Prompt card** — `{colors.card}` background, `{colors.border}` outline, `{rounded.md}`, soft shadow. The generic bordered container behind every First-login prompt question — same visual family as the Entries list, just holding a question + action pair instead of a data row.
@@ -181,4 +185,4 @@ Inherits shadcn defaults unchanged for: `Input`, `Dialog`, `Tabs`, `Avatar`, `Se
 | Set Recommendation text in `{typography.recommendation}` (italic Lora) | Extend Lora to headings, buttons, or body copy |
 | Use soft, low-opacity shadows alongside borders (2026-09-26) | Use hard-edged shadows, heavy elevation, or a Material-style layering system |
 | Reserve `{colors.hero}` (dark forest green) for the Remaining Calorie Budget's hero card only | Use the hero surface for any other component, or introduce a second dark surface |
-| Keep the entries list as one bordered container of rows | Turn each logged Entry into its own separate card |
+| Give each logged Entry its own bordered, shadowed row-card with a gap between them (2026-09-27) | Merge Entries back into one shared bordered container with divider lines |

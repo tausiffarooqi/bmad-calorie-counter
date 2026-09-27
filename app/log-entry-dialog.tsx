@@ -91,7 +91,9 @@ export function LogEntryDialog({ onSuccess }: LogEntryDialogProps = {}) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">Add Text</Button>
+        <Button variant="outline" size="cta" className="flex-1">
+          Add Text
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

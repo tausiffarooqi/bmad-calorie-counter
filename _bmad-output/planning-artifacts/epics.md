@@ -86,9 +86,10 @@ UX-DR3: Implement the radius scale — sm 8px (buttons, inputs), md 10px (entrie
 UX-DR4: Soft, low-opacity, generously-blurred shadows are used for depth on most cards (2026-09-26, supersedes the original "no drop shadows anywhere" rule) — always alongside border hairlines and dashed rules, never replacing them, and never hard-edged or Material-style elevation. The Hero card (UX-DR29) carries a slightly more pronounced shadow than other cards as the one deliberately featured surface; the in-progress indicator and secondary buttons stay flat (no shadow) by design.
 
 **Components**
-UX-DR5: Button (primary) — clay fill, cream text, sm radius, no border, soft shadow (2026-09-26); the single most-wanted action per screen.
-UX-DR6: Button (secondary) — card fill, foreground text, border outline, sm radius, no shadow; the lower-emphasis alternate action.
-UX-DR7: Entries list — one bordered container of rows (not per-entry cards), border dividers, md radius, soft shadow (2026-09-26), chronological (most recent last), no edit/delete affordance in MVP. Warm Editorial Refresh (2026-09-26): each row also shows an icon in a tinted circle and a time-derived meal-type label above the description — Breakfast/Lunch/Dinner for Meal-classified Entries (derived from the Entry's own timestamp, not a stored field), "Snack" (Cookie icon) for every Snack/Beverage Entry regardless of time of day.
+UX-DR5: Button (primary) — clay fill, cream text, sm radius, no border, 600-weight label text (2026-09-27), a clay-tinted "soft-primary" shadow (2026-09-27, supersedes the generic soft shadow — matches every mockup's `.btn-primary`); the single most-wanted action per screen (Add Photo, Log a meal, Log in, Create account).
+UX-DR6: Button (secondary) — card fill, foreground text, border outline, sm radius, 600-weight label text (2026-09-27), no shadow; the lower-emphasis alternate action (Add Text, Not now, Skip).
+UX-DR7a: Button (CTA size, new 2026-09-27) — a ~44px-tall variant of either UX-DR5 or UX-DR6, reserved for the Daily view's Add Photo/Add Text row (the app's one full-width, page-level call-to-action pair). Every other button in the app keeps the ~32px default height — a full-app button-height consistency pass is deferred (`deferred-work.md`), not decided here.
+UX-DR7: Entries list — each logged Entry is its own bordered, soft-shadowed row-card (2026-09-27, supersedes the original "one bordered container of rows, border dividers" treatment — direct match to every Warm Editorial Refresh mockup), md radius, 8px gap between cards, chronological (most recent last), no edit/delete affordance in MVP. Warm Editorial Refresh (2026-09-26): each card also shows an icon in a tinted circle and a time-derived meal-type label above the description — Breakfast/Lunch/Dinner for Meal-classified Entries (derived from the Entry's own timestamp, not a stored field), "Snack" (Cookie icon) for every Snack/Beverage Entry regardless of time of day.
 UX-DR29: Hero card (new, 2026-09-26) — the Remaining Calorie Budget's new home on the Daily view, replacing the plain-number-on-page-background treatment. Dark `{colors.hero}` background, `{rounded.xl}`, soft shadow. Layout: the large bold Remaining Calorie Budget number (unchanged display-number style) with a "/ N kcal target" caption beside it; a horizontal progress bar below (track = low-opacity hero-foreground tint, fill = `{colors.hero-accent}`) representing the portion of Daily Calorie Target consumed; two caption lines below the bar (remaining budget restated in words, percentage of target consumed). Over-Target State: the bar visually caps at 100% width and its fill never changes to a warning color — the budget number itself still goes negative in place, exactly as before this refresh (FR-12, FR-18).
 UX-DR30: Greeting header (new, 2026-09-26) — persistent on every Daily view load, not just first login: "Good morning/afternoon/evening, {Name}" derived from local hour (5am–12pm morning, 12pm–5pm afternoon, 5pm–5am evening, anchored to the same AD-5 day-start), omitting the name entirely when none is on file (FR-26, FR-27). Replaces the First-login prompt's own former "Good morning" line — the tone-adaptive message (FR-18, Story 4.2) now sits directly beneath this header instead of repeating a greeting inside the prompt card.
 UX-DR8: Recommendation card — card background, sage border, lg radius, recommendation typography. Renders 0–3 cards depending on remaining Meal Slot count (2 stacked during 5am–12pm: lunch + dinner; 1 from 12pm–10pm: dinner; 0 or 1 after 10pm per FR-11). Never renders alongside the Over-Target banner. Recommendation text is a deterministic lookup (AD-8) — the same key returns identical text on a different day; this must not be implemented or copy-written to imply the system reasoned about the specific Entry just logged.
@@ -208,6 +209,10 @@ So that the experience feels considered rather than generic or mismatched.
 **Given** the Warm Editorial Refresh's soft-shadow rule (2026-09-26, supersedes the original "no drop shadows" rule)
 **When** a card, button, or container is styled
 **Then** most cards (button-primary, entries list, Recommendation card, Over-Target banner, prompt card, Hero card) carry a soft, low-opacity, generously-blurred shadow alongside their existing border/dashed-rule treatment — never a hard-edged or Material-style shadow — while the in-progress indicator and secondary button stay flat (no shadow) by design (UX-DR4)
+
+**Given** button label text (2026-09-27, UX-DR5/UX-DR6)
+**When** a primary or secondary button renders
+**Then** its label uses 600-weight text — bolder than shadcn's default 500/medium — and the primary variant's shadow is tinted `{colors.primary}` (`0 6px 16px rgb(198 108 77 / 0.25)`), not the generic neutral soft shadow every other card uses
 
 ### Story 0.2: Cross-Cutting Interaction & Accessibility Primitives
 
@@ -416,6 +421,10 @@ So that I get a calorie estimate without typing a description myself.
 **Given** I am on the photo-capture path
 **Then** a persistent, non-dismissible small-print notice near the "Add Photo" action instructs me to upload meal photos only (FR-21, UX-DR13)
 
+**Given** the Daily view's Add Photo / Add Text row (2026-09-27, UX-DR5/UX-DR6)
+**When** it renders
+**Then** "Add Photo" uses the primary button treatment (filled, clay-tinted shadow) and "Add Text" uses the secondary/outline treatment — an intentional asymmetry (Add Photo is the single most-wanted action, matching every Warm Editorial Refresh mockup), superseding the original "two equal-weight buttons" framing
+
 ### Story 2.3: In-Progress & Failure States
 
 As a user,
@@ -449,7 +458,7 @@ So that I can review what I've eaten without having to remember it myself.
 
 **Given** I have logged one or more Entries today
 **When** I view the Daily view
-**Then** I see them in one bordered container, as rows (not individual cards), each row showing an icon in a tinted circle, a meal-type label, the meal/item description, and its calorie value (UX-DR7)
+**Then** I see them as separate row-cards with a gap between them (2026-09-27, supersedes the original "one bordered container, not individual cards" treatment — UX-DR7), each card showing an icon in a tinted circle, a meal-type label, the meal/item description, and its calorie value
 
 **Given** an Entry is classified as a Meal (FR-7)
 **When** its row renders

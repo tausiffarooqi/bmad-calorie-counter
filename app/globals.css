@@ -108,6 +108,14 @@
      Elevation & Depth's "featured surface" callout). */
   --shadow-soft: 0 10px 28px rgb(39 48 46 / 0.08);
   --shadow-soft-strong: 0 14px 36px rgb(39 48 46 / 0.14);
+  /* Primary-button shadow (DESIGN.md, 2026-09-27) — tinted {colors.primary}
+     instead of the neutral dark tint every other card uses, matching every
+     mockup's `.btn-primary` exactly (`rgba(198, 108, 77, 0.25)` at today's
+     primary value). Derived via color-mix() rather than a hardcoded RGB
+     literal — same technique this file already uses for --secondary's
+     hover state below — so a future retune of --primary can't silently
+     drift the shadow tint out of sync with the color it's meant to match. */
+  --shadow-primary-soft: 0 6px 16px color-mix(in srgb, var(--primary) 25%, transparent);
 }
 
 :root {

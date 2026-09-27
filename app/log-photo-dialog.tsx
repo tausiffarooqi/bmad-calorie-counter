@@ -200,8 +200,14 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
         aria-hidden="true"
         tabIndex={-1}
       />
+      {/* variant="default" (primary), not "outline" (2026-09-27, DESIGN.md
+          UX-DR5) — Add Photo is the single most-wanted action on this row,
+          Add Text (log-entry-dialog.tsx) is the secondary alternative.
+          size="cta" (components/ui/button.tsx) — the shared full-width
+          page-level CTA size, not a one-off inline override. */}
       <Button
-        variant="outline"
+        size="cta"
+        className="flex-1"
         onClick={openPicker}
         disabled={busy}
         aria-describedby="photo-only-notice"
