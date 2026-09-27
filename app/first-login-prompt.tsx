@@ -29,7 +29,7 @@ interface FirstLoginPromptProps {
 // log-a-meal question.
 export function FirstLoginPrompt({ remainingBudget, onResolve }: FirstLoginPromptProps) {
   return (
-    <div className="w-full max-w-sm rounded-md border border-border bg-card p-4">
+    <div className="w-full max-w-sm rounded-md border border-border bg-card p-4 shadow-soft">
       <p className="text-sm text-foreground">
         Remaining budget today:{" "}
         <strong className="text-primary">{remainingBudget.toLocaleString()} calories</strong>.

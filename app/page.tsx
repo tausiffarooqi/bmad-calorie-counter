@@ -342,7 +342,7 @@ export default function Home() {
               way Recommendation cards already are, so a failed refetch after a
               prior over-target load never leaves a stale banner on screen. */}
           {!loadError && isOverTarget && (
-            <div className="w-full max-w-sm rounded-md border border-primary bg-card p-4">
+            <div className="w-full max-w-sm rounded-md border border-primary bg-card p-4 shadow-soft">
               {/* Plain body text (no `{typography.recommendation}`/italic Lora —
                   DESIGN.md reserves that role for the Recommendation card only;
                   the Over-Target banner's own component entry specifies just
@@ -356,7 +356,7 @@ export default function Home() {
           {!loadError && !isOverTarget && recommendations.map((recommendation) => (
             <div
               key={recommendation.slot}
-              className="w-full max-w-sm rounded-lg border border-accent bg-card p-4"
+              className="w-full max-w-sm rounded-lg border border-accent bg-card p-4 shadow-soft"
             >
               {/* Eyebrow "{Slot} Recommendation" in sage/accent styling, per
                   mockups/daily-view.html's `.rec-eyebrow`. */}

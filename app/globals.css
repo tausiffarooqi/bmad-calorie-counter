@@ -74,6 +74,10 @@
   --color-tint-lavender-fg: var(--tint-lavender-fg);
   --color-tint-neutral-bg: var(--tint-neutral-bg);
   --color-tint-neutral-fg: var(--tint-neutral-fg);
+  /* Trend bar-chart neutral fill (Story 5.1, UX-DR31) — a bar fill, distinct
+     from the entry-icon tint pair above despite the shared "neutral" name;
+     value from mockups/trends-refresh.html's own --tint-neutral-bar. */
+  --color-tint-neutral-bar: var(--tint-neutral-bar);
   /* Muted Earth Editorial radius scale (DESIGN.md) — fixed values, not
      proportionally derived from --radius, since sm/md/lg aren't a clean
      multiplier of one base (8px / 10px / 12px). --radius-xl deliberately
@@ -95,11 +99,13 @@
   --radius-hero: 20px;
   /* Soft shadow (DESIGN.md Elevation & Depth, 2026-09-26) — low-opacity,
      generously blurred, applied alongside border hairlines/dashed rules,
-     never replacing them. Each owning story applies this utility to its
-     own card (button-primary here; entries-list/prompt-card/Recommendation
-     card/Over-Target banner in their own stories). shadow-soft-strong is
-     the Hero card's own slightly more pronounced variant (Story 4.1,
-     DESIGN.md Elevation & Depth's "featured surface" callout). */
+     never replacing them. Applied directly on button-primary (Story 0.1),
+     entries-list/prompt-card family (entries-list.tsx, first-login-
+     prompt.tsx, breakfast-offer-card.tsx) and Recommendation card/Over-
+     Target banner (all closed out by Story 3.3/3.5's cleanup pass) — every
+     DESIGN.md-listed surface now carries it. shadow-soft-strong is the Hero
+     card's own slightly more pronounced variant (Story 4.1, DESIGN.md
+     Elevation & Depth's "featured surface" callout). */
   --shadow-soft: 0 10px 28px rgb(39 48 46 / 0.08);
   --shadow-soft-strong: 0 14px 36px rgb(39 48 46 / 0.14);
 }
@@ -144,6 +150,7 @@
   --tint-lavender-fg: #82769A;
   --tint-neutral-bg: #EFEBE3;
   --tint-neutral-fg: #69736D;
+  --tint-neutral-bar: #DCE5DB;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

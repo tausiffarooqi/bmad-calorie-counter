@@ -70,7 +70,7 @@ export function EntriesList({ entries, loadError }: EntriesListProps) {
   return (
     <div aria-live="polite">
       {entries.length > 0 && (
-        <ul className="w-full max-w-sm list-none rounded-md border border-border bg-card">
+        <ul className="w-full max-w-sm list-none rounded-md border border-border bg-card shadow-soft">
           {entries.map((entry, index) => {
             // Client-only "local hour of this Entry's own timestamp"
             // derivation (Code Map) — never a stored field (AD-7

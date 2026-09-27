@@ -41,7 +41,7 @@ export function BreakfastOfferCard({ onAccept, onDecline }: BreakfastOfferCardPr
   }
 
   return (
-    <div className="w-full max-w-sm rounded-md border border-border bg-card p-4">
+    <div className="w-full max-w-sm rounded-md border border-border bg-card p-4 shadow-soft">
       <p className="text-sm text-foreground">Want a breakfast recommendation too?</p>
       <div className="mt-3 flex gap-3">
         <Button onClick={handleAccept} disabled={accepting} variant="outline" className="flex-1">

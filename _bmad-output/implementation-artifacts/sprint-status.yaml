@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-19-2026 12:00
-last_updated: '09-26-2026 16:00'
+last_updated: '09-26-2026 16:20'
 project: Calorie Tracker MVP
 project_key: NOKEY
 tracking_system: file-system
@@ -57,12 +57,12 @@ development_status:
   2-6-photo-preview-during-estimation: done
   epic-2-retrospective: done
 
-  epic-3: done
+  epic-3: in-progress
   3-1-classify-entries-as-meal-or-snack-beverage: done
   3-2-compute-remaining-calorie-budget: done
-  3-3-meal-slot-recommendations-by-time-of-day: ready-for-dev
+  3-3-meal-slot-recommendations-by-time-of-day: done
   3-4-after-10pm-conditional-recommendation: done
-  3-5-over-target-override: ready-for-dev
+  3-5-over-target-override: done
   epic-3-retrospective: done
 
   epic-4: in-progress
