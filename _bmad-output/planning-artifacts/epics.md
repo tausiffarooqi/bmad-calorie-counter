@@ -600,6 +600,10 @@ So that I know what to eat next without having to think about it myself.
 **When** the response returns
 **Then** it includes the estimated calories, my updated Remaining Calorie Budget, and one Recommendation per remaining Meal Slot, all in the same response (FR-9) — completing the contract Epic 2 began
 
+**Given** the Warm Editorial Refresh's soft-shadow rule (2026-09-26, UX-DR4)
+**When** a Recommendation card renders
+**Then** it carries a soft, low-opacity shadow alongside its existing `{colors.accent}` border — same treatment as the Entries list and other refreshed cards, never a hard-edged shadow
+
 ### Story 3.4: After-10pm Conditional Recommendation
 
 As a user,
@@ -636,6 +640,10 @@ So that the app doesn't keep suggesting more food I don't need.
 
 **Given** the Over-Target banner is shown
 **Then** its copy follows the "never shaming" voice rule (FR-18/UX-DR21) and the calm clay-toned visual treatment (UX-DR9) — never red/alarm styling
+
+**Given** the Warm Editorial Refresh's soft-shadow rule (2026-09-26, UX-DR4)
+**When** the Over-Target banner renders
+**Then** it carries a soft, low-opacity shadow alongside its existing `{colors.primary}` border — same treatment as the Entries list and other refreshed cards, never a hard-edged shadow
 
 **Given** AD-6's precedence rule also covers FR-16 (decline-path recommendations) and FR-17 (breakfast offer), which belong to Epic 4
 **Then** `recommendationEngine.forSlot()` is built generally enough for those future callers now — Epic 4 will call this same function, not reimplement precedence
