@@ -185,7 +185,7 @@ User can set a Dietary Preference (vegetarian or non-vegetarian) on the account 
 - Finer-grained preferences (macros, cuisine, allergies, etc.) — deferred, see §5.
 
 ### 4.6 Account & Security *(Could-have — prototype stage; include if low-friction)*
-**Description:** Baseline account creation so calorie data is tied to a single private user. Flagged as Could-have because this is a prototype, but not silently dropped — see `[NOTE FOR PM]` below.
+**Description:** Baseline account creation so calorie data is tied to a single private user, plus a small personalization touch (a Name, used to greet the user by name). Flagged as Could-have because this is a prototype, but not silently dropped — see `[NOTE FOR PM]` below.
 
 **Functional Requirements:**
 
@@ -194,6 +194,21 @@ User can create an account and log in via email and password.
 
 **Out of Scope:**
 - Account recovery / forgot-password flow — not needed for this prototype.
+
+#### FR-26: Name capture and editing
+User provides their Name when creating an account; it can be changed later on the Preferences page.
+
+**Consequences (testable):**
+- Name is required at registration, the same as email and password — account creation fails with an inline validation error if left blank.
+- Existing accounts created before this capability shipped have no Name on file; nothing forces them to set one, and the app degrades gracefully wherever the Name would otherwise be shown (see FR-27).
+
+#### FR-27: Personalized greeting
+The Daily view displays a time-of-day greeting using the user's Name.
+
+**Consequences (testable):**
+- The greeting reads "Good morning," "Good afternoon," or "Good evening," followed by the user's Name, based on the local time of day.
+- Shown on every Daily view load, not just the first one of the Day — a persistent header, distinct from the First-Login prompt's own one-shot tone-adaptive message about yesterday (FR-18), which continues to appear separately, directly beneath this greeting.
+- If the user has no Name on file (an account created before this capability existed, per FR-26), the greeting omits the name entirely rather than showing a placeholder or blank space (e.g. "Good afternoon." on its own).
 
 #### FR-21: Meal-photo-only guidance
 System displays an in-app notice instructing users to upload meal photos only, to reduce the risk of accidentally uploading unrelated personal photos.
@@ -247,7 +262,7 @@ The dashboard also shows simple aggregate stats over the 3-month window: the num
 - First-Login Daily Engagement flow (remaining-budget prompt, decline-path recommendations, pre-10am breakfast offer, tone-adaptive message).
 
 **Could-have** *(include only if it doesn't add much build friction)*
-- Account creation, login, and logout (email/password).
+- Account creation, login, and logout (email/password), plus a Name captured at registration and a personalized Daily-view greeting.
 - Meal-photo-only in-app guidance.
 - Historical Trends Dashboard (3-month view + summary stats).
 

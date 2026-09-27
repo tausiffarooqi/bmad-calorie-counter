@@ -1,0 +1,456 @@
+<!--
+  Direction: Warm Editorial Refresh (2026-09-26, revision 2)
+  Rationale: Same Muted Earth Editorial structure and IA (single column, Add
+  Photo / Add Text, one Recommendation card) — palette, shadows, hero card
+  from revision 1, plus this round's additions: a time-of-day greeting, the
+  "Your daily balance" label, decorative circles + flame icon in the hero
+  card, and meal-type icon circles in the entries list (still one bordered
+  container of rows, not individual cards -- that Do/Don't is unchanged).
+
+  RESOLVED (2026-09-26, see chat):
+  - Snack/Beverage entries use a Cookie icon with a new neutral tint
+    (added below).
+  - The hero card does NOT get sticky/pinned positioning -- everything
+    scrolls together as one normal page, exactly like the current
+    (pre-refresh) app already does. The fixed-height "phone bezel" frame
+    below is a decorative mockup device shell (its own `overflow: hidden`
+    is just for clean rounded screen corners) -- not a real viewport
+    constraint. The actual live app has no fixed-height wrapper anywhere;
+    it's a normal responsive page with native browser scroll, so a
+    static screenshot of a frame with more entries than fit at 660px can
+    look "cut off" even though nothing is actually lost -- scrolling the
+    real page reveals it, same as it does today.
+  - Greeting typeface stays Inter (sans-serif) rather than the v0
+    reference's serif, and the Lunch icon keeps reusing the sage accent
+    hue -- both accepted as-is (no objection raised).
+  - Greeting name: RESOLVED -- a real "Name" field is being added to
+    Registration (and made editable on Account/Preferences), so this
+    stops being a placeholder. See EXPERIENCE.md's Information
+    Architecture and Component Patterns (Greeting header row) for the
+    behavioral spec, and PRD.md for the FR once written. "Alex" below is
+    now sample data for a real field, not a stand-in for a missing one.
+    Greeting hour boundaries (also now spec'd in EXPERIENCE.md): 5am-12pm
+    morning, 12pm-5pm afternoon, 5pm-5am (next day) evening.
+
+  STILL OPEN (see chat):
+  1. Per-entry meal-type label (Breakfast/Lunch/Dinner): the real data
+     model has no such field -- entries are only classified Meal vs.
+     Snack/Beverage (FR-7). Below derives the label from created_at's
+     local hour purely for the mockup (compute-don't-store, matching this
+     app's existing AD-7 precedent) -- not yet confirmed as the real rule.
+
+  Hex values:
+    --bg: #F7F6F2 | --card: #FFFFFF | --text: #27302E | --text-muted: #69736D
+    --primary: #C66C4D (terracotta) | --accent: #6C876E (sage) | --border: #E5E3DB
+    --hero: #273B35 | --hero-foreground: #FFFFFF | --hero-muted: #A8BCB0 | --hero-accent: #E8A17F
+    --tint-peach-bg: #F8E9DF / --tint-peach-fg: #C66C4D (breakfast, reuses primary)
+    --tint-sage-bg: #E5EEE5 / --tint-sage-fg: #6C876E (lunch, reuses accent -- see Q4 above)
+    --tint-lavender-bg: #EAE7F1 / --tint-lavender-fg: #82769A (dinner, new hue)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Direction: Warm Editorial Refresh (rev 2)</title>
+<style>
+  :root {
+    --bg: #F7F6F2;
+    --card: #FFFFFF;
+    --text: #27302E;
+    --text-muted: #69736D;
+    --primary: #C66C4D;
+    --accent: #6C876E;
+    --border: #E5E3DB;
+    --hero: #273B35;
+    --hero-foreground: #FFFFFF;
+    --hero-muted: #A8BCB0;
+    --hero-accent: #E8A17F;
+    --tint-peach-bg: #F8E9DF;
+    --tint-peach-fg: #C66C4D;
+    --tint-sage-bg: #E5EEE5;
+    --tint-sage-fg: #6C876E;
+    --tint-lavender-bg: #EAE7F1;
+    --tint-lavender-fg: #82769A;
+    --tint-neutral-bg: #EFEBE3;
+    --tint-neutral-fg: #69736D;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 24px;
+    background: #EAE7DF;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    justify-content: center;
+  }
+  .frame-label {
+    text-align: center;
+    font-size: 13px;
+    color: #6E6656;
+    margin-bottom: 10px;
+    letter-spacing: 0.03em;
+    max-width: 320px;
+  }
+  .phone {
+    width: 320px;
+    height: 660px;
+    background: var(--bg);
+    border-radius: 28px;
+    border: 8px solid #27302E;
+    overflow: hidden;
+    position: relative;
+    color: var(--text);
+  }
+  .screen {
+    padding: 24px 22px 22px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .greeting {
+    font-size: 21px;
+    font-weight: 700;
+    margin: 0 0 2px;
+    color: var(--text);
+  }
+  .greeting .period { color: var(--primary); }
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 4px;
+  }
+  .date {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .hero-card {
+    background: var(--hero);
+    color: var(--hero-foreground);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 14px 36px rgba(39, 59, 53, 0.18);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-deco-circle-1 {
+    position: absolute;
+    top: -60px;
+    right: -50px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .hero-deco-circle-2 {
+    position: absolute;
+    top: -24px;
+    right: -12px;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .hero-flame {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--hero-accent);
+  }
+  .hero-label {
+    font-size: 13px;
+    color: var(--hero-muted);
+    margin: 0 0 6px;
+    position: relative;
+  }
+  .hero-top {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    position: relative;
+  }
+  .hero-number {
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0;
+  }
+  .hero-target {
+    font-size: 14px;
+    color: var(--hero-muted);
+  }
+  .hero-track {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+    margin: 14px 0 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hero-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--hero-accent);
+  }
+  .hero-captions {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--hero-muted);
+    position: relative;
+  }
+  .entries {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .entry-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    padding: 10px 12px;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(39, 48, 46, 0.06);
+  }
+  .entry-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .entry-icon.tint-peach { background: var(--tint-peach-bg); color: var(--tint-peach-fg); }
+  .entry-icon.tint-sage { background: var(--tint-sage-bg); color: var(--tint-sage-fg); }
+  .entry-icon.tint-lavender { background: var(--tint-lavender-bg); color: var(--tint-lavender-fg); }
+  .entry-icon.tint-neutral { background: var(--tint-neutral-bg); color: var(--tint-neutral-fg); }
+  .entry-info { flex: 1; min-width: 0; }
+  .entry-type {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 2px;
+  }
+  .entry-name {
+    margin: 0;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .entry-cal {
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .log-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    flex: 1;
+    padding: 12px 0;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: default;
+    border: 1px solid var(--border);
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: #FFFFFF;
+    border-color: var(--primary);
+    box-shadow: 0 6px 16px rgba(198, 108, 77, 0.25);
+  }
+  .btn-secondary {
+    background: var(--card);
+    color: var(--text);
+  }
+  .rec-card {
+    margin-top: auto;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 16px;
+    background: var(--card);
+    box-shadow: 0 6px 18px rgba(39, 48, 46, 0.06);
+  }
+  .rec-eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin: 0 0 6px;
+    font-weight: 700;
+  }
+  .rec-text {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 17px;
+    line-height: 1.35;
+    margin: 0;
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+
+<div>
+  <div class="frame-label">Primary — midday, 1 slot remaining. Greeting name and meal-type labels are PROVISIONAL (see file comment / chat).</div>
+  <div class="phone"><div class="screen">
+    <p class="greeting">Good afternoon, Alex<span class="period">.</span></p>
+    <p class="date">Wednesday, 2:14 PM</p>
+    <div class="hero-card">
+      <div class="hero-deco-circle-1"></div>
+      <div class="hero-deco-circle-2"></div>
+      <div class="hero-flame">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+      </div>
+      <p class="hero-label">Your daily balance</p>
+      <div class="hero-top">
+        <p class="hero-number">1,240</p>
+        <span class="hero-target">/ 2,000 kcal target</span>
+      </div>
+      <div class="hero-track"><div class="hero-fill" style="width: 38%;"></div></div>
+      <div class="hero-captions">
+        <span>1,240 kcal remaining</span>
+        <span>38% of target</span>
+      </div>
+    </div>
+    <div class="entries">
+      <div class="entry-row">
+        <div class="entry-icon tint-peach">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+        </div>
+        <div class="entry-info">
+          <p class="entry-type">Breakfast</p>
+          <p class="entry-name">Oatmeal &amp; berries</p>
+        </div>
+        <span class="entry-cal">320 cal</span>
+      </div>
+      <div class="entry-row">
+        <div class="entry-icon tint-sage">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+        </div>
+        <div class="entry-info">
+          <p class="entry-type">Lunch</p>
+          <p class="entry-name">Paneer tikka bowl</p>
+        </div>
+        <span class="entry-cal">440 cal</span>
+      </div>
+    </div>
+    <div class="log-buttons">
+      <div class="btn btn-primary">Add Photo</div>
+      <div class="btn btn-secondary">Add Text</div>
+    </div>
+    <div class="rec-card">
+      <p class="rec-eyebrow">Dinner Recommendation</p>
+      <p class="rec-text">"Try a grilled paneer wrap with sautéed greens."</p>
+    </div>
+  </div></div>
+</div>
+
+<div>
+  <div class="frame-label">Over-Target State — bar caps at 100%, same accent color (no alarm treatment)</div>
+  <div class="phone"><div class="screen">
+    <p class="greeting">Good evening, Alex<span class="period">.</span></p>
+    <p class="date">Wednesday, 9:02 PM</p>
+    <div class="hero-card">
+      <div class="hero-deco-circle-1"></div>
+      <div class="hero-deco-circle-2"></div>
+      <div class="hero-flame">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+      </div>
+      <p class="hero-label">Your daily balance</p>
+      <div class="hero-top">
+        <p class="hero-number">-180</p>
+        <span class="hero-target">/ 2,000 kcal target</span>
+      </div>
+      <div class="hero-track"><div class="hero-fill" style="width: 100%;"></div></div>
+      <div class="hero-captions">
+        <span>180 kcal over</span>
+        <span>109% of target</span>
+      </div>
+    </div>
+    <div style="border:1px solid var(--primary); border-radius:10px; padding:16px; font-size:13px; color:var(--primary); margin-bottom:18px; line-height:1.45; background:var(--card); box-shadow:0 6px 18px rgba(39,48,46,0.06);">180 calories over target today. No recommendation for now — tomorrow's a fresh start.</div>
+    <div class="entries">
+      <div class="entry-row">
+        <div class="entry-icon tint-peach">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+        </div>
+        <div class="entry-info">
+          <p class="entry-type">Breakfast</p>
+          <p class="entry-name">Oatmeal &amp; berries</p>
+        </div>
+        <span class="entry-cal">320 cal</span>
+      </div>
+      <div class="entry-row">
+        <div class="entry-icon tint-sage">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+        </div>
+        <div class="entry-info">
+          <p class="entry-type">Lunch</p>
+          <p class="entry-name">Paneer tikka bowl</p>
+        </div>
+        <span class="entry-cal">440 cal</span>
+      </div>
+      <div class="entry-row">
+        <div class="entry-icon tint-lavender">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+        </div>
+        <div class="entry-info">
+          <p class="entry-type">Dinner</p>
+          <p class="entry-name">Thali platter</p>
+        </div>
+        <span class="entry-cal">1,440 cal</span>
+      </div>
+      <div class="entry-row">
+        <!-- Snack/Beverage entry -- Cookie icon, neutral tint (per chat: "for
+             the Snack label, you can use a Cookie icon"). Uses the same
+             time-derived-label approach as Breakfast/Lunch/Dinner above,
+             but since Snack/Beverage entries aren't tied to a Meal Slot at
+             all (FR-8), "Snack" here is just the classification itself,
+             not a time-derived slot name -- open question 2 from chat. -->
+        <div class="entry-icon tint-neutral">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/></svg>
+        </div>
+        <div class="entry-info">
+          <p class="entry-type">Snack</p>
+          <p class="entry-name">Two glasses of iced coffee</p>
+        </div>
+        <span class="entry-cal">480 cal</span>
+      </div>
+    </div>
+    <div class="log-buttons">
+      <div class="btn btn-primary">Add Photo</div>
+      <div class="btn btn-secondary">Add Text</div>
+    </div>
+  </div></div>
+</div>
+
+</body>
+</html>

@@ -2,7 +2,7 @@
 name: 'Calorie Tracker MVP'
 status: final
 created: '2026-09-18'
-updated: '2026-09-19'
+updated: '2026-09-26'
 sources:
   - '_bmad-output/planning-artifacts/prds/prd-bmad-calorie-counter-2026-09-15/prd.md'
   - '_bmad-output/planning-artifacts/prds/prd-bmad-calorie-counter-2026-09-15/addendum.md'
@@ -20,16 +20,16 @@ Mobile-first responsive web — the primary input (a meal photo) is captured on 
 | Surface | Reached from | Purpose |
 | --- | --- | --- |
 | Login | App open, not authenticated | Email + password sign-in. Link to Register. |
-| Register | Login screen link | Email + password + confirm, **plus Daily Calorie Target** (pre-filled with a standard adult default, editable) — collected at account creation per FR-13, not deferred to Preferences. Creates account, logs straight in (email confirmation disabled on the self-hosted Supabase instance for this prototype). Link to Login. |
-| Daily view (home) | App open, authenticated | Remaining Calorie Budget, today's logged Entries, log actions, Recommendation(s) for remaining Meal Slots. The default landing surface after login. |
+| Register | Login screen link | **Name** (new, 2026-09-26 — see below), email + password + confirm, **plus Daily Calorie Target** (pre-filled with a standard adult default, editable) — collected at account creation per FR-13, not deferred to Preferences. Creates account, logs straight in (email confirmation disabled on the self-hosted Supabase instance for this prototype). Link to Login. |
+| Daily view (home) | App open, authenticated | Time-of-day greeting with the user's Name (new, 2026-09-26), Remaining Calorie Budget, today's logged Entries, log actions, Recommendation(s) for remaining Meal Slots. The default landing surface after login. |
 | Log Entry flow | Daily view — Add Photo / Add Text | Capture a photo or type a description; in-progress indicator while estimating; retry prompt on insufficient detail (FR-4). Returns to Daily view on success. |
-| First-login prompt | Daily view, first open of a new Day | Remaining budget + "log a meal?" ask, conditional pre-10am breakfast offer, tone-adaptive message about yesterday (FR-15–FR-18). |
-| Account / Preferences | Daily view — settings icon | Daily Calorie Target (set at Register, changeable here per FR-13), Dietary Preference (veg / non-veg). |
+| First-login prompt | Daily view, first open of a new Day | "Log a meal?" ask, conditional pre-10am breakfast offer, tone-adaptive message about yesterday (FR-15–FR-18) — now shown directly beneath the persistent greeting header rather than repeating its own "Good morning" line (see Component Patterns and Key Flows). |
+| Account / Preferences | Daily view — settings icon | **Name** (new, 2026-09-26, editable), Daily Calorie Target (set at Register, changeable here per FR-13), Dietary Preference (veg / non-veg). |
 | Historical Trends | Daily view — nav link | 3-month day-by-day view + aggregate stats (Could-have, FR-22/FR-23). |
 
 Single-column throughout; no sidebar, no multi-panel dashboard (see `DESIGN.md.Layout & Spacing`). Modal/sheet stacks one level deep — the Log Entry flow and First-login prompt are the only overlay-style surfaces, and neither ever opens on top of the other.
 
-→ Composition reference: `mockups/daily-view.html` (Daily view — primary, Over-Target, and First-login states). Spine wins on conflict.
+→ Composition reference: `mockups/daily-view.html` (original Muted Earth Editorial — Daily view primary, Over-Target, and First-login states). Warm Editorial Refresh (2026-09-26): `mockups/daily-view-refresh.html` (Daily view primary + Over-Target with the greeting header, hero card, and icon-tinted entries), `mockups/trends-refresh.html` (Historical Trends bar chart), `mockups/auth-refresh.html` (Login + Register). Spine wins on conflict.
 
 ## Voice and Tone
 
@@ -50,8 +50,9 @@ Behavioral. Visual specs live in `DESIGN.md.Components`. Every button across eve
 
 | Component | Use | Behavioral rules |
 | --- | --- | --- |
+| Greeting header (new, 2026-09-26) | Daily view | Persistent — shown on every Daily view load, not just first login. "Good {morning/afternoon/evening}, {Name}." derived from the local hour: 5am–12pm morning, 12pm–5pm afternoon, 5pm–5am (next day) evening — a greeting-specific boundary set, distinct from FR-10/FR-11's meal-slot windows, anchored to the same AD-5 5am day-start. Replaces the First-login prompt's own former "Good morning." line (see Key Flows) — the tone-adaptive message about yesterday now sits directly under this header instead of repeating a greeting inside the prompt card. |
 | Log buttons (Add Photo / Add Text) | Daily view | Two equal-weight entry points into the Log Entry flow. Photo opens the device camera/file picker; Text opens a single-line-to-multiline input. Exactly one of the two is used per Entry — there's no combined photo+text submission in MVP. |
-| Entries list | Daily view | One bordered container, entries as rows (not individual cards — see `DESIGN.md`). Each row: meal/item description + calorie value. Chronological, most recent last. No edit/delete in MVP (not in PRD scope). |
+| Entries list | Daily view | One bordered container, entries as rows (not individual cards — see `DESIGN.md`). Each row: an icon in a tinted circle (Warm Editorial Refresh, 2026-09-26 — see `DESIGN.md.Components`), a time-derived meal-type label (Breakfast/Lunch/Dinner for Meal-classified Entries; "Snack" for Snack/Beverage Entries, Cookie icon) above the description, and the calorie value. Chronological, most recent last. No edit/delete in MVP (not in PRD scope). |
 | Recommendation card | Daily view | **One card per remaining Meal Slot** — 2, stacked, during the 5am–12pm window (lunch + dinner, FR-10); 1 (dinner only) from 12pm–10pm; 0 or 1 after 10pm per FR-11. Cards stack in the same bordered-container register as the Entries list, always the last element(s) on the surface. Shows nothing if the Over-Target State is active (FR-12) — the Over-Target banner replaces all of them at once, never alongside any card. Recommendation text is a deterministic lookup (`ARCHITECTURE-SPINE.md` AD-8, keyed on slot × Dietary Preference × budget state) — the same key returns the same suggestion verbatim on a different day; this is expected, not a bug, and nothing in the copy implies the system is reasoning about what was actually eaten. |
 | Over-Target banner | Daily view | Replaces the Recommendation card when active. States excess calories plainly, in `{colors.primary}` (clay) — never a red/alarm treatment (FR-12, FR-18). |
 | First-login prompt cards | First-login prompt | Sequential, not simultaneous: the "log a meal?" ask always appears; the breakfast offer (if before 10am) appears as a second card below it, never merged into one compound question. |
@@ -59,6 +60,7 @@ Behavioral. Visual specs live in `DESIGN.md.Components`. Every button across eve
 | Retry prompt | Log Entry flow | Replaces the in-progress indicator when FR-4 triggers. States plainly that more detail is needed (not a generic error) and keeps the user's original input editable rather than clearing the field. Same `retry-prompt` treatment (DESIGN.md) also covers a hard estimation failure (network drop, the Gemini call erroring rather than returning ambiguously) — see State Patterns. |
 | Hard estimation failure | Log Entry flow | Distinct from FR-4's retry: the estimation call itself failed rather than returning an "insufficient detail" result. Same visual treatment as the Retry prompt (`retry-prompt` component), but the copy says the attempt failed and offers a plain "Try again" — the user's input is preserved, resubmission re-runs the same call. |
 | Photo-only notice | Log Entry flow (photo path) | A short standing in-app notice near the Add Photo action instructing users to upload meal photos only, to reduce the risk of accidentally uploading unrelated personal photos (FR-21). Not a dismissible dialog the user must acknowledge — a persistent small-print line, consistent with the calm/low-friction register. |
+| Trend bar chart (new, 2026-09-26) | Historical Trends | Replaces the original plain day-by-day text list. One bar per day, height = that day's total calories as a % of that day's own Daily Calorie Target (not a shared scale across days), with a dashed reference line at the 100%-of-target mark. Bars that stay within target use a neutral fill; bars that go over target use `{colors.primary}` (terracotta) — the same color used everywhere else for Over-Target reporting, never a warning color (FR-12, FR-18). Exact per-day figures and how a ~90-day (3-month) window gets windowed/scrolled on a phone-width chart are open implementation questions, not decided by this spine — see `mockups/trends-refresh.html`'s own header comment. |
 
 ## State Patterns
 
@@ -125,7 +127,7 @@ Behavioral. Visual contrast lives in `DESIGN.md` (Muted Earth palette checked fo
 ### Flow 1 — First login of the day (Tausif, weekday, 7:40am) — realizes UJ-1
 
 1. Tausif opens the app before work. He's authenticated already (session persists from GoTrue).
-2. First-login prompt appears: "Good morning." followed by yesterday's tone-adaptive message — "You stayed within your target yesterday — nice, steady work."
+2. The Daily view's persistent greeting header reads "Good morning, Tausif." (new, 2026-09-26 — shown on every load, not just this one), and directly beneath it sits the First-login prompt's tone-adaptive message about yesterday: "You stayed within your target yesterday — nice, steady work." The prompt card itself no longer repeats its own "Good morning" line, unlike before this refresh.
 3. First card: "Remaining budget today: 2,000 calories. Log a meal now?" He hasn't eaten yet, so he taps "Not now."
 4. Declining doesn't dead-end him (FR-16): the Daily view underneath is already showing its normal state for this time of day — two Recommendation cards stacked, lunch and dinner, since it's before noon.
 5. Second card (it's before 10am): "Want a breakfast recommendation too?" He taps "Yes, suggest one." A third card appears above the other two — breakfast, a separate slot on top of the 2 from the 5am–12pm window (FR-17), never replacing them.
