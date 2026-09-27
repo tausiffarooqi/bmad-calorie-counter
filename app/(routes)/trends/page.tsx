@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { getClientTimeZone } from "@/lib/get-client-timezone";
 import { isUnauthenticatedErrorBody, redirectToLogin } from "@/lib/handle-session-expiry";
-import { computeTrendSummaryStats, trendDateRange, type TrendDay } from "@/lib/services/trends";
+import {
+  computeTrendSummaryStats,
+  computeTrendBarHeightPercent,
+  TARGET_LINE_TOP_PERCENT,
+  trendDateRange,
+  type TrendDay,
+} from "@/lib/services/trends";
 import { BackToDailyViewLink } from "@/app/back-to-daily-view-link";
 
 interface TrendsApiResponse {
@@ -145,11 +151,14 @@ export default function TrendsPage() {
         </p>
       )}
 
-      {/* Story 5.2: aggregate summary above the day list (Approach) — plain
+      {/* Story 5.2: aggregate summary above the chart (Approach) — plain
           text, no widget/tile/card treatment (epic-5-context.md UX &
           Interaction Patterns: "one linear reporting surface, not a widget
-          dashboard"), and no color-coding for over-target (same "no
-          alarm treatment" rule as the day list's own plain-text figures). */}
+          dashboard"). This block itself never color-codes over-target (the
+          "no alarm treatment" rule) — the bar chart below it is UX-DR31's
+          own explicit, narrower exception (over-target bars use the same
+          terracotta as everywhere else Over-Target is reported), not a
+          contradiction of this rule. */}
       {nonEmptyDays && stats && dateRange && (
         <div
           aria-live="polite"
@@ -183,30 +192,84 @@ export default function TrendsPage() {
         </div>
       )}
 
+      {/* Story 5.1: bar-chart histogram (UX-DR31, 2026-09-26) — supersedes
+          the original plain day-by-day text list. Chart-only render order is
+          oldest-to-newest, left-to-right (a bar chart's usual reading
+          convention, matching the mockup's own day-label sequence) — a
+          reversed copy of `nonEmptyDays`, which stays most-recent-first for
+          Story 5.2's stats computation above (order-independent there).
+          Horizontally scrollable, never paginated/infinite-loaded — the full
+          up-to-~90-day window is already in `nonEmptyDays` (UX-DR28). The
+          dashed target line/label live in the outer (non-scrolling)
+          `relative` wrapper, not inside the `overflow-x-auto` bars row —
+          keeping them there would anchor `right-0` to the full scrollable
+          content's edge rather than the visible viewport, pinning the label
+          off-screen until scrolled all the way to the newest-day end
+          (review finding). */}
       {nonEmptyDays && (
-        <ul
-          aria-live="polite"
-          className="w-full max-w-sm list-none rounded-md border border-border bg-card"
-        >
-          {nonEmptyDays.map((day, index) => (
-            <li
-              key={day.dayStart}
-              className={`flex items-center justify-between gap-4 px-4 py-2.5 text-sm text-foreground ${
-                index > 0 ? "border-t border-border" : ""
-              }`}
+        <div className="w-full max-w-sm rounded-lg border border-border bg-card px-4 pt-4 pb-3 shadow-soft">
+          <div className="relative h-[160px]">
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 border-t border-dashed border-border"
+              style={{ top: `${TARGET_LINE_TOP_PERCENT}%` }}
+            />
+            <span
+              aria-hidden="true"
+              className="absolute right-0 bg-card pl-1 text-[9px] text-muted-foreground"
+              style={{ top: `calc(${TARGET_LINE_TOP_PERCENT}% - 14px)` }}
             >
-              <span className="min-w-0 truncate">
-                {formatDayLabel(day.dayStart, spansYearBoundary)}
-              </span>
-              {/* Plain text, no color-coding for within/over-target — the
-                  "no alarm treatment" rule (Boundaries & Constraints,
-                  Design Notes). */}
-              <span className="shrink-0 text-muted-foreground">
-                {day.totalCalories.toLocaleString()} / {day.dailyCalorieTarget.toLocaleString()} cal
-              </span>
-            </li>
-          ))}
-        </ul>
+              target
+            </span>
+            <div
+              role="group"
+              aria-label={`Daily calories for ${nonEmptyDays.length} ${nonEmptyDays.length === 1 ? "day" : "days"}`}
+              aria-live="polite"
+              className="flex h-full items-end gap-1.5 overflow-x-auto"
+            >
+              {[...nonEmptyDays].reverse().map((day) => {
+                const heightPercent = computeTrendBarHeightPercent(
+                  day.totalCalories,
+                  day.dailyCalorieTarget
+                );
+                const overTarget = day.totalCalories > day.dailyCalorieTarget;
+                const dayLabel = formatDayLabel(day.dayStart, spansYearBoundary);
+                return (
+                  <div
+                    key={day.dayStart}
+                    className="flex h-full w-6 shrink-0 flex-col items-center justify-end gap-1"
+                  >
+                    <div
+                      role="img"
+                      aria-label={`${dayLabel}: ${day.totalCalories.toLocaleString()} of ${day.dailyCalorieTarget.toLocaleString()} cal`}
+                      title={`${dayLabel}: ${day.totalCalories.toLocaleString()} / ${day.dailyCalorieTarget.toLocaleString()} cal`}
+                      className={`w-full rounded-t-[4px] rounded-b-[2px] ${
+                        overTarget ? "bg-primary" : "bg-tint-neutral-bar"
+                      }`}
+                      style={{ height: `${heightPercent}%` }}
+                    />
+                    <span className="text-[9px] text-muted-foreground">
+                      {new Date(day.dayStart).toLocaleDateString(undefined, { weekday: "narrow" })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {/* Color legend (review finding) — the dashed line's "target"
+              caption explains itself, but nothing otherwise says what the
+              two bar colors mean without hovering an over-target bar first. */}
+          <div className="mt-2 flex items-center gap-3 text-[9px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <span aria-hidden="true" className="inline-block size-2 rounded-full bg-tint-neutral-bar" />
+              within target
+            </span>
+            <span className="flex items-center gap-1">
+              <span aria-hidden="true" className="inline-block size-2 rounded-full bg-primary" />
+              over target
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );

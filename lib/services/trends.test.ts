@@ -5,7 +5,13 @@
 // Run with: node --test lib/services/trends.test.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { computeTrendDays, computeTrendSummaryStats, trendDateRange } from "./trends.ts";
+import {
+  computeTrendDays,
+  computeTrendSummaryStats,
+  computeTrendBarHeightPercent,
+  TARGET_LINE_TOP_PERCENT,
+  trendDateRange,
+} from "./trends.ts";
 import type { TrendDay } from "./trends.ts";
 
 const TZ = "America/New_York";
@@ -224,4 +230,39 @@ test("trendDateRange returns the same value twice for a single-day window", () =
 
 test("trendDateRange returns undefined for an empty array", () => {
   assert.equal(trendDateRange([]), undefined);
+});
+
+// Story 5.1's bar-chart histogram (UX-DR31) — computeTrendBarHeightPercent()
+// I/O & Edge-Case Matrix.
+test("zero calories yields a 0% bar", () => {
+  assert.equal(computeTrendBarHeightPercent(0, 2000), 0);
+});
+
+test("a typical mid-range day (50% of target) scales proportionally", () => {
+  // 50% of target -> 50 / 1.3 ≈ 38.46% of the chart's own height.
+  assert.ok(Math.abs(computeTrendBarHeightPercent(1000, 2000) - 38.46) < 0.01);
+});
+
+test("exactly-at-target yields ~76.9% (100/1.3), matching the 130%-headroom container", () => {
+  assert.ok(Math.abs(computeTrendBarHeightPercent(2000, 2000) - 76.923) < 0.01);
+});
+
+test("a day at the chart's 130%-of-target headroom ceiling fills exactly 100%", () => {
+  assert.equal(computeTrendBarHeightPercent(2600, 2000), 100);
+});
+
+test("far over target caps at 100%, never overflowing the track", () => {
+  assert.equal(computeTrendBarHeightPercent(10_000, 2000), 100);
+});
+
+test("dailyCalorieTarget = 0 degrades to 0% rather than dividing by zero", () => {
+  assert.equal(computeTrendBarHeightPercent(500, 0), 0);
+});
+
+test("a negative dailyCalorieTarget (not reachable in practice) also degrades to 0%, not a negative height", () => {
+  assert.equal(computeTrendBarHeightPercent(500, -2000), 0);
+});
+
+test("TARGET_LINE_TOP_PERCENT sits at the mockup's documented ~23.08% from the top", () => {
+  assert.ok(Math.abs(TARGET_LINE_TOP_PERCENT - 23.077) < 0.01);
 });

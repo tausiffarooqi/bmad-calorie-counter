@@ -74,6 +74,32 @@ export function trendDateRange(days: TrendDay[]): TrendDateRange | undefined {
   return { earliest, latest };
 }
 
+// Story 5.1's bar-chart histogram (UX-DR31, Warm Editorial Refresh
+// 2026-09-26) — the chart container represents 130% of a day's own target
+// height (mockup's own convention: mockups/trends-refresh.html), so an
+// over-target day still fits on the chart without the bar overflowing its
+// track. `TARGET_LINE_TOP_PERCENT` is the dashed 100%-of-target reference
+// line's fixed position, derived from the same 130% constant — always
+// `100 - 100/1.3`, never a separate magic number the two could drift apart
+// from.
+const CHART_HEADROOM_FACTOR = 1.3;
+export const TARGET_LINE_TOP_PERCENT = 100 - 100 / CHART_HEADROOM_FACTOR;
+
+// Pure, sync — bar height as a % of the chart container, capped [0, 100]
+// (Over-Target State never overflows the track, matching the Hero card's
+// identical capping rule, UX-DR29). `dailyCalorieTarget <= 0` is not a
+// reachable state (Story 1.1/1.3 both enforce a positive target) but
+// degrades to 0 rather than dividing by zero.
+export function computeTrendBarHeightPercent(
+  totalCalories: number,
+  dailyCalorieTarget: number
+): number {
+  if (dailyCalorieTarget <= 0) return 0;
+  const percentOfTarget = (totalCalories / dailyCalorieTarget) * 100;
+  const rawHeight = percentOfTarget / CHART_HEADROOM_FACTOR;
+  return Math.min(100, Math.max(0, rawHeight));
+}
+
 // Story 5.2's aggregate summary over a set of `TrendDay`s: counts/percentages
 // of days within vs. over target, plus the average daily calories consumed.
 // Percentages and the average are rounded to the nearest whole number for
