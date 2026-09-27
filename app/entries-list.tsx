@@ -33,10 +33,11 @@ function EntryIcon({ label }: { label: MealTypeLabel }) {
   );
 }
 
-// Renders today's Entries as one bordered container of rows — never
-// per-entry cards (DESIGN.md's Entries-list token: `{colors.card}`
-// background, `{colors.border}` row dividers, `{rounded.md}`). Renders
-// nothing at all when the list is empty — no empty-state placeholder
+// Renders today's Entries as separate row-cards with a gap between them
+// (2026-09-27, supersedes the original "one bordered container of rows"
+// treatment — DESIGN.md's Entries-list token: `{colors.card}` background,
+// `{colors.border}` outline, `{rounded.md}`, soft shadow, applied per card).
+// Renders nothing at all when the list is empty — no empty-state placeholder
 // (Boundaries & Constraints, I/O matrix). A fetch failure is a distinct
 // case from "genuinely zero Entries today" — silently rendering nothing
 // for both would make a real load error indistinguishable from an empty
@@ -59,7 +60,7 @@ export function EntriesList({ entries, loadError }: EntriesListProps) {
   }
 
   // Epic 2 retro action item: the aria-live region itself is always
-  // mounted, even while `entries` is empty — only the styled `<ul>` (and
+  // mounted, even while `entries` is empty — only the styled list (and
   // its "renders nothing when empty, no placeholder box" contract) is
   // conditional. Previously the whole `aria-live="polite"` node only
   // existed once `entries.length > 0`, so the very first Entry logged each
@@ -70,8 +71,8 @@ export function EntriesList({ entries, loadError }: EntriesListProps) {
   return (
     <div aria-live="polite">
       {entries.length > 0 && (
-        <ul className="w-full max-w-sm list-none rounded-md border border-border bg-card shadow-soft">
-          {entries.map((entry, index) => {
+        <ul className="flex w-full max-w-sm list-none flex-col gap-2">
+          {entries.map((entry) => {
             // Client-only "local hour of this Entry's own timestamp"
             // derivation (Code Map) — never a stored field (AD-7
             // precedent). This list only ever renders once `entries` has
@@ -85,9 +86,7 @@ export function EntriesList({ entries, loadError }: EntriesListProps) {
             return (
               <li
                 key={entry.id}
-                className={`flex items-center gap-3 px-4 py-2.5 text-sm text-foreground ${
-                  index > 0 ? "border-t border-border" : ""
-                }`}
+                className="flex items-center gap-3 rounded-md border border-border bg-card p-3 text-sm text-foreground shadow-soft"
               >
                 <EntryIcon label={mealTypeLabel} />
                 <div className="min-w-0 flex-1">
