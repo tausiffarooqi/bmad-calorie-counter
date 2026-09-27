@@ -15,6 +15,8 @@ sources:
 
 Mobile-first responsive web — the primary input (a meal photo) is captured on a phone, but the product must work from a desktop browser too (PRD §1). shadcn/ui on Next.js + Tailwind (per `ARCHITECTURE-SPINE.md`); `DESIGN.md` is the visual identity reference, this spine is the behavior. Single-tenant, single-user-per-account — there is no sharing, no team surface, no multi-user concept anywhere in this product (PRD Non-Goals). Light mode only for this build.
 
+The Daily view's content column (greeting, Hero card, entries, recommendations, log actions) is top-aligned, not vertically centered (2026-09-27) — it starts flush below the header icon row and flows downward, regardless of how much content that particular render has. Matches `mockups/daily-view-refresh.html`'s own `.screen` rule (no `justify-content` — top-aligned by default). Other single-card pages (Login, Register, Preferences) remain vertically centered — this decision is scoped to the Daily view only.
+
 ## Information Architecture
 
 | Surface | Reached from | Purpose |

@@ -149,7 +149,16 @@ export default function Home() {
     budgetReady && promptShownThisSession && entries.length === 0 && !promptDismissed;
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
+    // justify-start (2026-09-27, was justify-center): the greeting/Hero
+    // card/entries/recommendations column always starts flush at the top
+    // and flows downward, rather than nominally vertically centering as a
+    // group — a distinction that matters most exactly when this render has
+    // little content (the First-Login prompt branch, a fresh zero-Entries
+    // day, or the loadError branch), not the common longer-content case
+    // this previously masked the difference in. Direct user request;
+    // intentionally scoped to this page only — Login/Register/Preferences
+    // keep justify-center unchanged.
+    <div className="flex flex-1 flex-col items-center justify-start gap-6 bg-background p-8 text-foreground">
       <div className="flex w-full justify-end gap-1">
         {/* Story 5.1: nav link to the new Historical Trends view (Code Map)
             — same shared HeaderIconButton as the Settings control right
