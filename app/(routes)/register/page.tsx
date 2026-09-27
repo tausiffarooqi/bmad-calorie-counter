@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MAX_DAILY_CALORIE_TARGET } from "@/lib/constants";
+import { MAX_DAILY_CALORIE_TARGET, MAX_NAME_LENGTH } from "@/lib/constants";
 
 // Standard adult daily intake default (PRD FR-13 [ASSUMPTION]) — the user
 // can accept or change it before submitting.
@@ -15,6 +15,7 @@ const DEFAULT_DAILY_CALORIE_TARGET = 2000;
 const MIN_PASSWORD_LENGTH = 6;
 
 type FieldErrors = {
+  name?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
@@ -24,6 +25,7 @@ type FieldErrors = {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -36,6 +38,16 @@ export default function RegisterPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrors({});
+
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setErrors({ name: "Name is required." });
+      return;
+    }
+    if (trimmedName.length > MAX_NAME_LENGTH) {
+      setErrors({ name: `Name must be ${MAX_NAME_LENGTH} characters or fewer.` });
+      return;
+    }
 
     const target = Number(dailyCalorieTarget);
     if (!Number.isInteger(target) || target <= 0) {
@@ -72,7 +84,7 @@ export default function RegisterPage() {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, dailyCalorieTarget: target }),
+        body: JSON.stringify({ name: trimmedName, email, password, dailyCalorieTarget: target }),
       });
       const result = await response.json();
 
@@ -83,6 +95,8 @@ export default function RegisterPage() {
           setErrors({ email: message });
         } else if (code === "invalid_target") {
           setErrors({ dailyCalorieTarget: message });
+        } else if (code === "invalid_name") {
+          setErrors({ name: message });
         } else {
           setErrors({ form: message });
         }
@@ -111,6 +125,27 @@ export default function RegisterPage() {
         noValidate
       >
         <h1 className="text-lg font-semibold">Create your account</h1>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            autoComplete="name"
+            placeholder="e.g. Alex"
+            maxLength={MAX_NAME_LENGTH}
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? "name-error" : undefined}
+          />
+          {errors.name && (
+            <p id="name-error" role="alert" className="text-sm text-primary">
+              {errors.name}
+            </p>
+          )}
+        </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>

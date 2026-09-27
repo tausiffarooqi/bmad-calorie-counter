@@ -4,6 +4,12 @@
 // preferences (client + server), and any future caller.
 export const MAX_DAILY_CALORIE_TARGET = 20_000;
 
+// A generous ceiling for the Name field (FR-26) — no legitimate name needs
+// anywhere near this much. Single source of truth for register and
+// preferences (client + server), mirroring MAX_DESCRIPTION_LENGTH's role
+// below.
+export const MAX_NAME_LENGTH = 100;
+
 export const DIETARY_PREFERENCES = ["vegetarian", "non_vegetarian"] as const;
 export type DietaryPreference = (typeof DIETARY_PREFERENCES)[number];
 

@@ -6,9 +6,10 @@ import type { DietaryPreference } from "@/lib/constants";
 
 // The only code path allowed to read/write `profiles` (AD-1 layered
 // architecture, Consistency Conventions).
-export async function createProfile(userId: string, dailyCalorieTarget: number) {
+export async function createProfile(userId: string, name: string, dailyCalorieTarget: number) {
   await db.insert(profiles).values({
     userId,
+    name,
     dailyCalorieTarget,
     // dietaryPreference intentionally omitted — the DB default
     // ('non_vegetarian') applies until Story 1.3's Preferences screen

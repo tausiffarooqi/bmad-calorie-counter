@@ -11,6 +11,12 @@ export const profiles = pgTable("profiles", {
   userId: uuid("user_id")
     .primaryKey()
     .references(() => authUsers.id, { onDelete: "cascade" }),
+  // Story 1.1's Name field (FR-26) — nullable so every profile row created
+  // before this column existed stays valid; the Register form requires it
+  // going forward, but nothing back-fills existing accounts (Story 1.3
+  // lets the user set it later; Story 4.5's greeting omits the name
+  // entirely when this is null).
+  name: text("name"),
   dailyCalorieTarget: integer("daily_calorie_target").notNull(),
   dietaryPreference: text("dietary_preference").notNull().default("non_vegetarian"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

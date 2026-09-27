@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createProfile } from "@/lib/services/profiles";
-import { MAX_DAILY_CALORIE_TARGET } from "@/lib/constants";
+import { MAX_DAILY_CALORIE_TARGET, MAX_NAME_LENGTH } from "@/lib/constants";
 
 export async function POST(request: Request) {
-  let body: { email?: string; password?: string; dailyCalorieTarget?: number };
+  let body: { name?: string; email?: string; password?: string; dailyCalorieTarget?: number };
   try {
     body = await request.json();
   } catch {
@@ -15,6 +15,38 @@ export async function POST(request: Request) {
     );
   }
   const { email, password, dailyCalorieTarget } = body;
+
+  // typeof-checked before calling a string method — body is untrusted JSON,
+  // not a runtime-validated shape, and `.trim()` on a non-string (number,
+  // object, array) would throw an unhandled 500 instead of a controlled 400.
+  if (typeof body.name !== "string") {
+    return NextResponse.json(
+      { error: { code: "invalid_name", message: "Name is required." } },
+      { status: 400 }
+    );
+  }
+  // Trimmed before validating/persisting — a whitespace-only value is
+  // treated the same as blank (FR-26, Boundaries & Constraints).
+  const name = body.name.trim();
+
+  if (!name) {
+    return NextResponse.json(
+      { error: { code: "invalid_name", message: "Name is required." } },
+      { status: 400 }
+    );
+  }
+
+  if (name.length > MAX_NAME_LENGTH) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "invalid_name",
+          message: `Name must be ${MAX_NAME_LENGTH} characters or fewer.`,
+        },
+      },
+      { status: 400 }
+    );
+  }
 
   if (!email || !password) {
     return NextResponse.json(
@@ -117,7 +149,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await createProfile(data.user.id, dailyCalorieTarget);
+    await createProfile(data.user.id, name, dailyCalorieTarget);
   } catch (profileError) {
     console.error("Failed to create profile after signup:", profileError);
     // Roll back the orphaned Auth user rather than leaving an account with
