@@ -15,6 +15,9 @@ export interface Entry {
 
 interface EntriesApiResponse {
   entries?: Entry[];
+  // Story 4.5's Greeting header (FR-27) — null when the user has no Name on
+  // file (FR-26).
+  name?: string | null;
   remainingBudget?: number;
   recommendations?: Recommendation[];
   showFirstLoginPrompt?: boolean;
@@ -39,6 +42,7 @@ interface EntriesApiResponse {
 // on both the budget and the list shows up without a page reload.
 export function useDailyView(refreshKey: number) {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [name, setName] = useState<string | null>(null);
   const [remainingBudget, setRemainingBudget] = useState<number | undefined>(undefined);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   // Epic 4 retro action item: latches "the First-Login prompt was shown
@@ -111,6 +115,7 @@ export function useDailyView(refreshKey: number) {
 
       setLoadError(false);
       setEntries(result.entries ?? []);
+      setName(result.name ?? null);
       setRemainingBudget(result.remainingBudget);
       setRecommendations(result.recommendations ?? []);
       if (result.showFirstLoginPrompt) {
@@ -130,6 +135,7 @@ export function useDailyView(refreshKey: number) {
 
   return {
     entries,
+    name,
     remainingBudget,
     recommendations,
     promptShownThisSession,

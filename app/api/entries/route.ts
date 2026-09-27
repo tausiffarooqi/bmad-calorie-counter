@@ -598,6 +598,11 @@ export async function GET(request: Request) {
       inputMode: row.inputMode,
       createdAt: row.createdAt,
     })),
+    // Story 4.5's Greeting header (FR-27) — reuses this handler's own
+    // already-fetched `profile` (no extra query). `null` for a pre-existing
+    // account with no Name on file (FR-26); the client omits the name
+    // entirely in that case rather than showing a placeholder.
+    name: profile?.name ?? null,
     remainingBudget,
     recommendations,
     showFirstLoginPrompt,

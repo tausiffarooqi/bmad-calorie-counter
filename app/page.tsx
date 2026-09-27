@@ -9,7 +9,9 @@ import { EntriesList } from "@/app/entries-list";
 import { FirstLoginPrompt } from "@/app/first-login-prompt";
 import { BreakfastOfferCard } from "@/app/breakfast-offer-card";
 import { useDailyView } from "@/hooks/use-daily-view";
+import { useGreetingPeriod } from "@/hooks/use-greeting-period";
 import { getClientTimeZone } from "@/lib/get-client-timezone";
+import { formatGreeting } from "@/lib/services/greeting";
 import { createClient } from "@/lib/supabase/client";
 import { redirectToLogin } from "@/lib/handle-session-expiry";
 
@@ -32,6 +34,7 @@ export default function Home() {
   // so nothing here writes anything back.
   const {
     entries,
+    name,
     remainingBudget,
     recommendations,
     promptShownThisSession,
@@ -39,6 +42,11 @@ export default function Home() {
     showBreakfastOffer,
     loadError,
   } = useDailyView(refreshKey);
+
+  // Story 4.5's Greeting header (FR-27) — see hooks/use-greeting-period.ts
+  // for why this needs useSyncExternalStore rather than a plain client-side
+  // computation (SSR/hydration mismatch risk).
+  const greetingPeriod = useGreetingPeriod();
 
   // Local-only "the user already tapped one of the prompt's two buttons
   // this render" flag (Story 4.1 Code Map) — resolving is purely a
@@ -150,6 +158,19 @@ export default function Home() {
         <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-border" />
         <HeaderIconButton onClick={handleLogout} label="Log out" icon={<LogOut />} />
       </div>
+      {/* Story 4.5: persistent on every load — first login or a later one
+          the same Day — unlike the budget header below, which hides while
+          the First-Login prompt shows its own copy of that figure. The
+          greeting isn't restated anywhere else, so it always renders once
+          `greetingPeriod` resolves (client-only effect above). `truncate`
+          guards a name up to MAX_NAME_LENGTH (100 chars, lib/constants.ts)
+          from wrapping across lines or dominating the header. */}
+      {greetingPeriod && (
+        <p className="w-full max-w-sm truncate text-xl font-bold text-foreground">
+          {formatGreeting(greetingPeriod, name)}
+          <span className="text-primary">.</span>
+        </p>
+      )}
       {/* Story 4.1: this top-level header duplicates the same figure the
           First-Login prompt card's own "Remaining budget today: N calories"
           text already shows — hidden whenever the prompt is showing so the
