@@ -11,7 +11,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        // shadow-soft (DESIGN.md, 2026-09-26): the single most-wanted
+        // action per screen gets the soft lift; button-secondary (outline)
+        // stays flat by design.
+        default: "bg-primary text-primary-foreground shadow-soft hover:bg-primary/80",
         // bg-card (not shadcn-default bg-background): DESIGN.md's
         // Button (secondary) spec is {colors.card} fill / {colors.border} outline.
         outline:
