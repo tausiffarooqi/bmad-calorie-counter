@@ -345,12 +345,13 @@ export async function POST(request: Request) {
   }
 
   if (remainingBudget === undefined || recommendations === undefined) {
-    return NextResponse.json({ ok: true, calories: result.calories });
+    return NextResponse.json({ ok: true, calories: result.calories, description: result.description });
   }
 
   return NextResponse.json({
     ok: true,
     calories: result.calories,
+    description: result.description,
     remainingBudget,
     recommendations,
   });

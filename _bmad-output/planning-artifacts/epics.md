@@ -510,6 +510,10 @@ So that I can visually confirm what I submitted and what my estimate is based on
 **When** the "Logged — about N calories" confirmation is shown
 **Then** the preview remains visible alongside it, so I can see exactly what was estimated (FR-25, FR-9), and the dialog does not auto-close — the photo and the calorie estimate both stay on screen until I explicitly close the dialog myself (its existing close control; no new UI element)
 
+**Given** the photo is estimated successfully (2026-09-27, FR-25 amendment)
+**When** the success confirmation is shown
+**Then** the system's own generated description of the meal (the same text persisted to the Entry) is shown alongside the calorie estimate, not just the number — so I can confirm what the system actually identified, not only how many calories it came out to
+
 **Given** the photo needs a retry (insufficient detail, a hard estimation failure, or a client-side "too large" rejection)
 **When** the retry prompt appears
 **Then** the preview of the same photo remains visible alongside it, since it's the same photo that would be resubmitted (FR-4, FR-25)

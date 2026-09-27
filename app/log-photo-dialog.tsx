@@ -39,7 +39,7 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
   // close, since object URLs otherwise leak for the page's lifetime.
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { status, message, calories, submit, cancelAndReset } = useEntrySubmission();
+  const { status, message, calories, description, submit, cancelAndReset } = useEntrySubmission();
 
   // Review finding: the explicit revokes in handleFileChange/handleOpenChange
   // only cover a new pick or a user-initiated close — if this component
@@ -173,12 +173,26 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
   // on insertion without this mechanism — mirroring that text here too
   // would risk a double announcement or an assertive/polite race against
   // the identical string.
+  //
+  // Structured as two sentences — description, then the calorie line — to
+  // match the visible success markup below (description on its own line,
+  // "Logged — about N calories." on the next), rather than interpolating
+  // description mid-sentence (review finding: the two previously
+  // disagreed in shape). A single trailing period is stripped from the
+  // model-generated description first so it never doubles up against the
+  // one this string always adds.
+  const successAnnouncement =
+    calories === undefined
+      ? ""
+      : description
+        ? `${description.replace(/\.+$/, "")}. Logged — about ${calories} calories.`
+        : `Logged — about ${calories} calories.`;
   const announcement = preparing
     ? "Preparing photo…"
     : submitting
       ? "Estimating…"
-      : status === "success" && calories !== undefined
-        ? `Logged — about ${calories} calories.`
+      : status === "success"
+        ? successAnnouncement
         : "";
 
   return (
@@ -250,6 +264,15 @@ export function LogPhotoDialog({ onSuccess }: LogPhotoDialogProps = {}) {
             )}
             {status === "success" && calories !== undefined && (
               <p role="status" className="text-sm text-foreground">
+                {/* line-clamp-3 (review finding): the model-generated
+                    description has no length ceiling on this path (unlike
+                    entries-list.tsx's single-line truncate) — bounded here
+                    so a long description can't grow the dialog's content
+                    column arbitrarily, unlike this dialog's other,
+                    fixed-size elements. */}
+                {description && (
+                  <span className="block line-clamp-3">{description}</span>
+                )}
                 Logged — about {calories} calories.
               </p>
             )}

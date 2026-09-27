@@ -17,8 +17,14 @@ export type EntrySubmissionStatus =
   | "insufficient_detail"
   | "error";
 
+// `description` is optional here even though the server can never actually
+// send a successful response without one (gemini-adapter.ts validates a
+// non-empty description before ever returning `ok: true`) — this type
+// describes an untrusted network payload, not the server's own internal
+// invariant, so callers (log-photo-dialog.tsx) still fall back gracefully
+// rather than assuming a guarantee this file has no way to enforce.
 type EntriesApiResponse =
-  | { ok: true; calories: number }
+  | { ok: true; calories: number; description?: string }
   | { ok: false; reason: "insufficient_detail" }
   | { error: { code: string; message: string } };
 
@@ -33,6 +39,11 @@ export function useEntrySubmission() {
   const [status, setStatus] = useState<EntrySubmissionStatus>("idle");
   const [message, setMessage] = useState<string | undefined>();
   const [calories, setCalories] = useState<number | undefined>();
+  // The AI-generated description of what was estimated (FR-25 amendment,
+  // photo dialog) — surfaced alongside the calorie estimate so the user can
+  // confirm what the system actually saw, not just how many calories it
+  // came out to.
+  const [description, setDescription] = useState<string | undefined>();
 
   // A submission is only allowed to update state if it's still the most
   // recent one by the time its response arrives — incremented on every new
@@ -59,6 +70,7 @@ export function useEntrySubmission() {
     setStatus("idle");
     setMessage(undefined);
     setCalories(undefined);
+    setDescription(undefined);
   }
 
   // The dialogs only call cancelAndReset() from their own onOpenChange(false)
@@ -182,6 +194,7 @@ export function useEntrySubmission() {
 
     setStatus("success");
     setCalories(result.calories);
+    setDescription(result.description);
 
     if (options?.deferSuccessCallback === false) {
       onSuccess();
@@ -196,5 +209,5 @@ export function useEntrySubmission() {
     }, SUCCESS_CLOSE_DELAY_MS);
   }
 
-  return { status, message, calories, submit, cancelAndReset };
+  return { status, message, calories, description, submit, cancelAndReset };
 }
