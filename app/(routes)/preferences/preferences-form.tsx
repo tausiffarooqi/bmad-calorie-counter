@@ -132,7 +132,19 @@ function NameField({ initialValue }: { initialValue: string }) {
           aria-invalid={!!error}
           aria-describedby={error ? "name-error" : saved ? "name-saved" : undefined}
         />
-        <Button type="submit" variant="outline" disabled={submitting}>
+        {/* variant="default" (primary), not "outline" (2026-09-27) — user
+            request: all three Save buttons on this page match the Log in
+            button's color (same filled/tinted-shadow treatment). A
+            deliberate, explicit exception to UX-DR27's "at most one
+            primary action per screen" — three simultaneous primary
+            buttons here, one per independent field, not one page-level
+            CTA competing with others. Same rationale for
+            DailyCalorieTargetField's and DietaryPreferenceField's Save
+            buttons below/in this file — not repeated at each site.
+            aria-busy mirrors the Login screen's own submit button
+            (app/(routes)/login/page.tsx), which this change now visually
+            matches. */}
+        <Button type="submit" disabled={submitting} aria-busy={submitting}>
           {submitting ? "Saving…" : "Save"}
         </Button>
       </div>
@@ -208,7 +220,9 @@ function DailyCalorieTargetField({ initialValue }: { initialValue: number }) {
           aria-invalid={!!error}
           aria-describedby={error ? "target-error" : saved ? "target-saved" : undefined}
         />
-        <Button type="submit" variant="outline" disabled={submitting}>
+        {/* variant="default" (primary), aria-busy — see NameField's Save
+            button above for the full rationale (2026-09-27). */}
+        <Button type="submit" disabled={submitting} aria-busy={submitting}>
           {submitting ? "Saving…" : "Save"}
         </Button>
       </div>
@@ -278,11 +292,17 @@ function DietaryPreferenceField({ initialValue }: { initialValue: DietaryPrefere
           </Label>
         </div>
       </RadioGroup>
+      {/* mt-2 (2026-09-27, user request) — a bit more breathing room than
+          the wrapper's own gap-1.5 (6px, shared with the label-to-radio
+          gap above) gave this specific button, since it's the visual end
+          of the whole form, not just another field row.
+          variant="default" (primary), aria-busy — see NameField's Save
+          button above for the color-match rationale. */}
       <Button
         type="button"
-        variant="outline"
-        className="self-start"
+        className="mt-2 self-start"
         disabled={submitting}
+        aria-busy={submitting}
         onClick={handleSave}
       >
         {submitting ? "Saving…" : "Save"}

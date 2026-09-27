@@ -119,7 +119,7 @@ UX-DR25: Focus states use the ring token (clay) at visible contrast against the 
 UX-DR26: The in-progress indicator's "Estimating…" label is readable by a screen reader, not just visually implied by animation.
 
 **Interaction primitives**
-UX-DR27: Tap-first interaction model — no hover-only affordances, no required keyboard shortcuts; at most one primary + one secondary action per screen.
+UX-DR27: Tap-first interaction model — no hover-only affordances, no required keyboard shortcuts; at most one primary + one secondary action per screen. **Exception (2026-09-27, direct user request, Story 1.3):** Account/Preferences' three independent per-field Save buttons all use the primary treatment — each acts on its own field, not as competing page-level CTAs, so this doesn't read as "which one is the most-wanted action" ambiguity the rule otherwise guards against.
 UX-DR28: No infinite scroll (Entries list and Trends are both bounded datasets: single-Day / 3-month); no multi-step wizard for logging an Entry — one screen, one action.
 UX-DR31: Trend bar chart (new, 2026-09-26) — one bar per day, height = that day's total calories as a % of that day's own Daily Calorie Target (not a shared cross-day scale), with a dashed reference line at the 100%-of-target mark. Bars within target use a neutral fill; bars over target use `{colors.primary}` (terracotta) — same color as every other Over-Target reporting surface, never a distinct warning color.
 
@@ -309,7 +309,11 @@ So that my budget, recommendations, and greeting stay accurate as my needs chang
 
 **Given** the Warm Editorial Refresh's Page card treatment (2026-09-27, DESIGN.md Components)
 **When** the screen renders
-**Then** the card uses `{rounded.card}` (16px) and a soft shadow — matching Login/Register's own approved mockup treatment, though their code hasn't been updated yet (deferred) — and the page's content column is top-aligned, not vertically centered, matching the Daily view's own top-alignment (Story 0.1) rather than the page's previous, clearly-visible vertical-centering (this screen's content is short enough for the difference to be obvious, unlike the Daily view's usually-overflowing content)
+**Then** the card uses `{rounded.card}` (16px) and a soft shadow — matching Login/Register's own approved mockup treatment, though their code hasn't been updated yet (deferred) — and the page's content column is top-aligned, not vertically centered, matching the Daily view's own top-alignment fix rather than the page's previous, clearly-visible vertical-centering (this screen's content is short enough for the difference to be obvious, unlike the Daily view's usually-overflowing content)
+
+**Given** the per-field Save buttons (2026-09-27, user request)
+**When** any of the three renders
+**Then** it uses the primary button treatment (filled `{colors.primary}`, tinted shadow) — the same color as the Login screen's own Log in button — superseding the original mockup's more muted `.btn-save` (card-fill/outline) styling; the Dietary Preference field's Save button also gets a bit more top spacing (`mt-2` beyond the wrapper's own gap) since it's the visual end of the whole form, not just another field row
 
 **Given** I change my Name to a non-blank value
 **When** I save
