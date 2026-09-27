@@ -63,12 +63,18 @@ A solo-use, web-based prototype for tracking daily calorie intake. Log a meal by
 <tr>
 <td width="50%">
 
+**First log in**
+
+<img src="docs/screenshots/08-first-login.jpg?a=1" width="100%" alt="Daily view when you first log in in the morning" />
+
+</td>
+<td width="50%">
+
 **Historical trends**
 
 <img src="docs/screenshots/07-historical-trends.jpg?a=1" width="100%" alt="Historical trends page showing a bar-chart histogram of daily calorie history" />
 
 </td>
-<td width="50%"></td>
 </tr>
 </table>
 
