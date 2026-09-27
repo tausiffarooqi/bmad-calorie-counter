@@ -17,14 +17,14 @@ A solo-use, web-based prototype for tracking daily calorie intake. Log a meal by
 
 **Log in**
 
-<img src="docs/screenshots/01-login-page.jpg" width="100%" alt="Login page" />
+<img src="docs/screenshots/01-login-page.jpg?a=1" width="100%" alt="Login page" />
 
 </td>
 <td width="50%">
 
 **Create an account**
 
-<img src="docs/screenshots/02-registration-page.jpg" width="100%" alt="Registration page" />
+<img src="docs/screenshots/02-registration-page.jpg?a=1" width="100%" alt="Registration page" />
 
 </td>
 </tr>
@@ -33,14 +33,14 @@ A solo-use, web-based prototype for tracking daily calorie intake. Log a meal by
 
 **Account & Preferences**
 
-<img src="docs/screenshots/03-account-preferences-page.jpg" width="100%" alt="Account and Preferences page" />
+<img src="docs/screenshots/03-account-preferences-page.jpg?a=1" width="100%" alt="Account and Preferences page" />
 
 </td>
 <td width="50%">
 
 **Dashboard**
 
-<img src="docs/screenshots/04-dashboard.jpg" width="100%" alt="Daily view showing the remaining calorie budget, greeting, and today's logged meals" />
+<img src="docs/screenshots/04-dashboard.jpg?a=1" width="100%" alt="Daily view showing the remaining calorie budget, greeting, and today's logged meals" />
 
 </td>
 </tr>
@@ -49,14 +49,14 @@ A solo-use, web-based prototype for tracking daily calorie intake. Log a meal by
 
 **Log a meal via photo**
 
-<img src="docs/screenshots/05-log-meal-via-photo.jpg" width="100%" alt="Logging a meal via photo, showing the photo preview, generated description, and estimated calories" />
+<img src="docs/screenshots/05-log-meal-via-photo.jpg?a=1" width="100%" alt="Logging a meal via photo, showing the photo preview, generated description, and estimated calories" />
 
 </td>
 <td width="50%">
 
 **End of day (over budget)**
 
-<img src="docs/screenshots/06-end-of-day.jpg" width="100%" alt="Daily view at the end of the day, over the calorie target with a full entries list" />
+<img src="docs/screenshots/06-end-of-day.jpg?a=1" width="100%" alt="Daily view at the end of the day, over the calorie target with a full entries list" />
 
 </td>
 </tr>
@@ -65,7 +65,7 @@ A solo-use, web-based prototype for tracking daily calorie intake. Log a meal by
 
 **Historical trends**
 
-<img src="docs/screenshots/07-historical-trends.jpg" width="100%" alt="Historical trends page showing a bar-chart histogram of daily calorie history" />
+<img src="docs/screenshots/07-historical-trends.jpg?a=1" width="100%" alt="Historical trends page showing a bar-chart histogram of daily calorie history" />
 
 </td>
 <td width="50%"></td>
