@@ -1,8 +1,36 @@
+import { Coffee, Cookie, Utensils } from "lucide-react";
 import type { Entry } from "@/hooks/use-daily-view";
+import { getMealTypeLabel, type MealTypeLabel } from "@/lib/services/meal-label";
 
 interface EntriesListProps {
   entries: Entry[];
   loadError: boolean;
+}
+
+// Icon + tint pair per meal-type label (Story 2.4, UX-DR7) — mirrors
+// mockups/daily-view-refresh.html's per-row treatment exactly (icon choice,
+// tint-per-type). Keyed by the pure getMealTypeLabel() output above, not
+// re-derived here.
+const ENTRY_ICON_BY_LABEL: Record<
+  MealTypeLabel,
+  { Icon: typeof Coffee; tintBg: string; tintFg: string }
+> = {
+  Breakfast: { Icon: Coffee, tintBg: "bg-tint-peach-bg", tintFg: "text-tint-peach-fg" },
+  Lunch: { Icon: Utensils, tintBg: "bg-tint-sage-bg", tintFg: "text-tint-sage-fg" },
+  Dinner: { Icon: Utensils, tintBg: "bg-tint-lavender-bg", tintFg: "text-tint-lavender-fg" },
+  Snack: { Icon: Cookie, tintBg: "bg-tint-neutral-bg", tintFg: "text-tint-neutral-fg" },
+};
+
+function EntryIcon({ label }: { label: MealTypeLabel }) {
+  const { Icon, tintBg, tintFg } = ENTRY_ICON_BY_LABEL[label];
+  return (
+    <div
+      aria-hidden="true"
+      className={`flex size-[34px] shrink-0 items-center justify-center rounded-md ${tintBg} ${tintFg}`}
+    >
+      <Icon size={16} />
+    </div>
+  );
 }
 
 // Renders today's Entries as one bordered container of rows — never
@@ -43,17 +71,35 @@ export function EntriesList({ entries, loadError }: EntriesListProps) {
     <div aria-live="polite">
       {entries.length > 0 && (
         <ul className="w-full max-w-sm list-none rounded-md border border-border bg-card">
-          {entries.map((entry, index) => (
-            <li
-              key={entry.id}
-              className={`flex items-center justify-between gap-4 px-4 py-2.5 text-sm text-foreground ${
-                index > 0 ? "border-t border-border" : ""
-              }`}
-            >
-              <span className="min-w-0 truncate">{entry.description}</span>
-              <span className="shrink-0 text-muted-foreground">{entry.calories} cal</span>
-            </li>
-          ))}
+          {entries.map((entry, index) => {
+            // Client-only "local hour of this Entry's own timestamp"
+            // derivation (Code Map) — never a stored field (AD-7
+            // precedent). This list only ever renders once `entries` has
+            // data (never during a bare initial paint), so — unlike Story
+            // 4.5's greeting header — there's no SSR/hydration mismatch
+            // risk here.
+            const mealTypeLabel = getMealTypeLabel(
+              entry.classification,
+              new Date(entry.createdAt).getHours()
+            );
+            return (
+              <li
+                key={entry.id}
+                className={`flex items-center gap-3 px-4 py-2.5 text-sm text-foreground ${
+                  index > 0 ? "border-t border-border" : ""
+                }`}
+              >
+                <EntryIcon label={mealTypeLabel} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                    {mealTypeLabel}
+                  </p>
+                  <p className="truncate">{entry.description}</p>
+                </div>
+                <span className="shrink-0 text-muted-foreground">{entry.calories} cal</span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

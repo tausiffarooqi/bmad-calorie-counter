@@ -597,6 +597,10 @@ export async function GET(request: Request) {
       calories: row.calories,
       inputMode: row.inputMode,
       createdAt: row.createdAt,
+      // Story 2.4's icon/tint/meal-type label treatment (UX-DR7) needs
+      // Meal vs. Snack/Beverage per row — the column already exists
+      // (Story 3.1), this just surfaces it in the response.
+      classification: row.classification,
     })),
     // Story 4.5's Greeting header (FR-27) — reuses this handler's own
     // already-fetched `profile` (no extra query). `null` for a pre-existing

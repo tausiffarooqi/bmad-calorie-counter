@@ -60,6 +60,20 @@
   --color-hero-foreground: var(--hero-foreground);
   --color-hero-muted-foreground: var(--hero-muted-foreground);
   --color-hero-accent: var(--hero-accent);
+  /* Entries-list icon tints (Story 2.4, Warm Editorial Refresh 2026-09-26)
+     — one bg/fg pair per meal-type, values from mockups/daily-view-
+     refresh.html's own `:root` block (never promoted into DESIGN.md's
+     frontmatter — a per-component decorative detail, same "cite the
+     mockup directly" precedent EXPERIENCE.md already uses for the trend
+     chart's own per-day math). */
+  --color-tint-peach-bg: var(--tint-peach-bg);
+  --color-tint-peach-fg: var(--tint-peach-fg);
+  --color-tint-sage-bg: var(--tint-sage-bg);
+  --color-tint-sage-fg: var(--tint-sage-fg);
+  --color-tint-lavender-bg: var(--tint-lavender-bg);
+  --color-tint-lavender-fg: var(--tint-lavender-fg);
+  --color-tint-neutral-bg: var(--tint-neutral-bg);
+  --color-tint-neutral-fg: var(--tint-neutral-fg);
   /* Muted Earth Editorial radius scale (DESIGN.md) — fixed values, not
      proportionally derived from --radius, since sm/md/lg aren't a clean
      multiplier of one base (8px / 10px / 12px). --radius-xl deliberately
@@ -120,6 +134,16 @@
   --hero-foreground: #FFFFFF;
   --hero-muted-foreground: #A8BCB0;
   --hero-accent: #E8A17F;
+  /* Entries-list icon tints (Story 2.4, 2026-09-26) — Breakfast/Lunch/
+     Dinner/Snack, per mockups/daily-view-refresh.html. */
+  --tint-peach-bg: #F8E9DF;
+  --tint-peach-fg: #C66C4D;
+  --tint-sage-bg: #E5EEE5;
+  --tint-sage-fg: #6C876E;
+  --tint-lavender-bg: #EAE7F1;
+  --tint-lavender-fg: #82769A;
+  --tint-neutral-bg: #EFEBE3;
+  --tint-neutral-fg: #69736D;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

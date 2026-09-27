@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getClientTimeZone } from "@/lib/get-client-timezone";
 import { isUnauthenticatedErrorBody, redirectToLogin } from "@/lib/handle-session-expiry";
 import type { Recommendation } from "@/lib/services/recommendation-engine";
+import type { Classification } from "@/lib/constants";
 
 export interface Entry {
   id: string;
@@ -11,6 +12,14 @@ export interface Entry {
   calories: number;
   inputMode: string;
   createdAt: string;
+  // Story 2.4's icon/tint/meal-type label treatment (UX-DR7) — Meal vs.
+  // Snack/Beverage (FR-7). Unlike `dietary_preference` (freely writable via
+  // the Preferences form, genuinely untrusted), every `entries.classification`
+  // row is written exclusively through createEntry()'s own
+  // `classification: Classification`-typed parameter (lib/services/
+  // entries.ts) — the strict literal union here reflects a real, enforced
+  // invariant rather than widening it away.
+  classification: Classification;
 }
 
 interface EntriesApiResponse {
